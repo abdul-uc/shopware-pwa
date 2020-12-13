@@ -24,9 +24,9 @@ export interface GetNavigationParams {
  */
 export interface GetStoreNavigationParams {
   requestActiveId:
-    | "main-navigation"
-    | "service-navigation"
-    | "footer-navigation";
+  | "main-navigation"
+  | "service-navigation"
+  | "footer-navigation";
   requestRootId: "main-navigation" | "service-navigation" | "footer-navigation";
   depth?: number;
   buildTree?: boolean;
@@ -45,7 +45,7 @@ export async function getNavigation(
     getNavigationEndpoint(),
     params
   );
-
+  console.log("Response:" + resp);
   return resp.data;
 }
 
