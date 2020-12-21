@@ -94,5 +94,8 @@
   },
   "engines": {
     "node": ">=10.x"
+  },
+  "dependencies": {
+    "idb": "^5.0.8"
   }
 }
