@@ -23,6 +23,8 @@
   },
   "dependencies": {
     "axios": "^0.21.0",
+    "esbuild": "^0.8.26",
+    "idb": "^5.0.8",
     "query-string": "^6.13.7"
   },
   "devDependencies": {

@@ -7693,10 +7693,10 @@ es6-promisify@^5.0.0:
   dependencies:
     es6-promise "^4.0.3"
 
-esbuild@^0.8.8:
-  version "0.8.8"
-  resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.8.8.tgz#4501b97584564ae3338dc9574aa6fbb21802ecf0"
-  integrity sha512-1Wo7L5Y6FpUUalF2APCh9cJi+IZ60jU9IBpTZSXA7jj3HItpAxPTmeIqGsaRW66rjg8SU6rvLnvQpgWqkCkCeA==
+esbuild@^0.8.26:
+  version "0.8.26"
+  resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.8.26.tgz#a85491617ebd2bd35ca4bf479239487eb6819d71"
+  integrity sha512-u3MMHOOumdWoAKF+073GHPpzvVB2cM+y9VD4ZwYs1FAQ6atRPISya35dbrbOu/mM68mQ42P+nwPzQVBTfQhkvQ==
 
 escalade@^3.1.0:
   version "3.1.0"
@@ -9687,6 +9687,11 @@ icss-utils@^4.0.0, icss-utils@^4.1.0, icss-utils@^4.1.1:
   integrity sha512-4aFq7wvWyMHKgxsH8QQtGpvbASCf+eM3wPRLI6R+MgAnTCZ6STYsRvttLvRWK0Nfif5piF394St3HeJDaljGPA==
   dependencies:
     postcss "^7.0.14"
+
+idb@^5.0.8:
+  version "5.0.8"
+  resolved "https://registry.yarnpkg.com/idb/-/idb-5.0.8.tgz#5f2b72a69267960d222a5f104053625f203fdbb2"
+  integrity sha512-K9xInRkVbT3ZsYimD2KVj6B4E93IBvOjEQTryu99WuuN7G+7x3SzA79+yubbX0QRN9V64Gi+L+ulG5QYTVydOg==
 
 ieee754@^1.1.4:
   version "1.1.13"

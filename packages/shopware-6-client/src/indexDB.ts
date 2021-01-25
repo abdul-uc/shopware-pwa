@@ -1,4 +1,4 @@
-import { IDBPDatabase, openDB } from "idb";
+import { IDBPDatabase, openDB, DBSchema } from "idb";
 
 interface MyDB extends DBSchema {
   'favourite-number': {
@@ -7,16 +7,20 @@ interface MyDB extends DBSchema {
   };
   products: {
     value: {
+      id: string;
       name: string;
+      detail_path: string;
+      detail_page: any;
       price: number;
       productCode: string;
+      path: string[];
+      element: any;
     };
     key: string;
     indexes: { 'by-price': number };
   };
 }
-
-export class IndexedDb {
+export class indexDB {
   private database: string;
   private db: any;
 
@@ -40,6 +44,7 @@ export class IndexedDb {
         },
       });
     } catch (error) {
+      console.log("Error:", error);
       return false;
     }
   }
@@ -71,7 +76,7 @@ export class IndexedDb {
   // This fails at compile time, as the 'favourite-number' store expects a number.
   await db.put('favourite-number', 'Twelve', 'Jake');
 
-    let dbPromise: Promise<idxdb.DB> = openDB('test-db5', 1, (upgradeDb: idxdb.UpgradeDB) => {
+    /* let dbPromise: Promise<idxdb.DB> = openDB('test-db5', 1, (upgradeDb: idxdb.UpgradeDB) => {
         if (!upgradeDb.objectStoreNames.contains( tableName )) {
             let store = upgradeDb.createObjectStore( tableName , {keyPath: 'name', autoIncrement: true});
         }
@@ -90,8 +95,8 @@ export class IndexedDb {
     }).catch((err: Error) => {
         console.log(`Couldn\'t fetch top navigation from the store navigation!. ${err}`);
         // Add an item to our database
-    });
-    const data = [];
+    }); */
+    // const data = [];
     /* const tx = this.db.transaction(tableName, "readonly");
     if (tx) {
       const store = tx.objectStore(tableName);
@@ -111,8 +116,8 @@ export class IndexedDb {
       /* const result = await store.get(id);
       console.log("Get Data ", JSON.stringify(result));
       return result; */
-      console.log("Get Data ", data);
-      return data;
+      // console.log("Get Data ", data);
+      // return data;
     // }
   }
 
@@ -155,5 +160,4 @@ export class IndexedDb {
     return id;
   }
 }
-
 // export const IndexedDb;
