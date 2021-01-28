@@ -96,6 +96,7 @@
     "node": ">=10.x"
   },
   "dependencies": {
+    "@sighmir/indexeddb-export-import": "^1.1.1",
     "idb": "^5.0.8"
   }
 }

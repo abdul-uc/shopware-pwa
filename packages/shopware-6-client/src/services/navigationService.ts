@@ -18,6 +18,10 @@ import {
   ShopwareSearchParams,
 } from "@shopware-pwa/commons/interfaces/search/SearchCriteria";
 import { getDefaultApiParams } from "@shopware-pwa/composables";
+import { stringify } from 'zipson';
+import { parse } from 'zipson';
+
+// import { exportToJson } from '../idb-backup-and-restore.mjs';
 /**
  * @alpha
  */
@@ -77,13 +81,13 @@ export interface Path {
 }
 export function get_path(children: any, path_array: Path) {
   const path = children.route.path;
-  console.log("path", path);
+  // console.log("path", path);
   path_array.path.push(path);
   if (children.children?.length > 0) {
-    console.log("children.children", children.children);
+    // console.log("children.children", children.children);
     for (let child of children.children) {
       const path = child.route.path;
-      console.log("path", path);
+      // console.log("path", path);
       path_array.path.push(path);
       if (child.children?.length > 0) {
         get_path(child, path_array);
@@ -92,7 +96,8 @@ export function get_path(children: any, path_array: Path) {
   }
   //console.log("Path Array:", path_array);
 }
-export async function saveProducts(
+
+export async function saveProducts_OLD(
   response: NavigationResponse,
   contextInstance: ShopwareApiInstance = defaultInstance
 ): Promise<void> {
@@ -106,7 +111,7 @@ export async function saveProducts(
         keyPath: 'id', autoIncrement: true
       });
       productStore.createIndex('by-price', 'price');
-      productStore.createIndex('by-path', 'path');
+      productStore.createIndex('by-path', 'path', { multiEntry: true });
       productStore.createIndex('by-detail-path', 'detail_path');
     },
   });
@@ -153,7 +158,7 @@ export async function saveProducts(
     };
 
     let detail_params_default = getDefaultApiParams();
-    console.log("DETAIL PARAMS DEFAULT: ",detail_params_default);
+    console.log("DETAIL PARAMS DEFAULT: ", detail_params_default);
     for (let element of elements) {
       console.log(element); // 1, "string", false
       if (element.translated.customFields.migration_BerndWolf_product_attr13 && element.translated.customFields.migration_BerndWolf_product_attr13.startsWith("K")) {
@@ -232,6 +237,103 @@ export async function saveProducts(
     await db.put("favourite-number", response_place_holder, "page_response_place_holder");
   } */
 }
+export async function saveProducts(
+  response: NavigationResponse,
+  contextInstance: ShopwareApiInstance = defaultInstance
+): Promise<void> {
+
+  console.log("Inside Save Products", response);
+  const db = await openDB<MyDB>('my-db-1', 1, {
+    upgrade(db) {
+      db.createObjectStore('favourite-number');
+
+      const productStore = db.createObjectStore('products', {
+        keyPath: 'id', autoIncrement: true
+      });
+      productStore.createIndex('by-price', 'price');
+      productStore.createIndex('by-path', 'path', { multiEntry: true });
+      productStore.createIndex('by-detail-path', 'detail_path');
+    },
+  });
+  let params: ShopwareSearchParams = {
+    limit: 10
+  };
+  console.log("Response Children:", response.children);
+  let path_array = {} as Path;
+  path_array.path = [];
+  get_path(response, path_array);
+  console.log("Path Array:", path_array);
+
+  var unique = path_array.path.filter(function (elem, index, self) {
+    return index === self.indexOf(elem);
+  });
+
+  console.log("Unique Path Array:", unique);
+  await db.put("favourite-number", unique, "unique-path-array");
+
+  unique = ["/"];
+  for (let path of unique) {
+    console.log("PATH:", path);
+
+    const all_products = await contextInstance.invoke.post(getPageResolverEndpoint(), {
+      path: path.toString(),
+      ...params,
+    }, { timeout: 300000 });
+
+    const val = await db.get("favourite-number", 'page_response_place_holder') || 0;
+    console.log("val", val);
+    if (val == 0) {
+      const response_place_holder = all_products.data;
+      //response_place_holder.cmsPage.sections[0].blocks[2].slots[0].data.listing.elements = [];
+      await db.put("favourite-number", response_place_holder, "page_response_place_holder");
+    }
+  }
+  let detail_params_default = getDefaultApiParams();
+  console.log("DETAIL PARAMS DEFAULT: ", detail_params_default);
+  let db_bkp = detail_params_default.save_products.query;
+  // let parsed_bkp = parse(db_bkp);
+  // let json = JSON.stringify(parsed_bkp);
+  var importObject = parse(db_bkp);//JSON.parse(json)
+  console.log("importObject:", importObject);
+  for (const toAdd of importObject["products"]) {
+    console.log("importObject:", toAdd);
+    for (const object of toAdd) {
+      await db.put("products", object);
+    }
+  }
+}
+export async function exportToJson(db) {
+
+  const exportObject = {}
+  if (db.objectStoreNames.length === 0) {
+    return JSON.stringify(exportObject)
+  } else {
+
+    for (const storeName of db.objectStoreNames) {
+      const allObjects = []
+      const product_exist = await db.getAll("products") || false;
+      console.log("product_exist", product_exist);
+      if (product_exist) {
+        allObjects.push(product_exist);
+      }
+      exportObject["products"] = allObjects;
+      // Last store was handled
+      if (
+        db.objectStoreNames.length ===
+        Object.keys(exportObject).length
+      ) {
+
+      }
+    }
+    console.log("LIMIT REACHED:", exportObject);
+    const stringified = stringify(exportObject);
+    console.log("STRINGIFIED:", stringified);
+    // const stringified_parse = parse(stringified);
+    // console.log("STRINGIFIED PARSED:", stringified_parse);
+    return stringified;
+  }
+
+}
 export async function getNavigation(
   params: GetNavigationParams,
   contextInstance: ShopwareApiInstance = defaultInstance
@@ -245,11 +347,46 @@ export async function getNavigation(
         keyPath: 'id', autoIncrement: true
       });
       productStore.createIndex('by-price', 'price');
-      productStore.createIndex('by-path', 'path');
+      productStore.createIndex('by-path', 'path', { multiEntry: true });
       productStore.createIndex('by-detail-path', 'detail_path');
     },
   });
+  console.log("--NAVIGATION--");
+  // const IDBExportImport = require('indexeddb-export-import');
+  // console.log("--IDB--", IDBExportImport);
 
+  let db_bkp = await exportToJson(db);
+  console.log("DB BKP:", db_bkp);
+
+  let db_bkp_string = JSON.stringify(db_bkp);
+  console.log("DB BKP STRING:", db_bkp_string);
+
+  /* const test_db = await openDB<MyDB>('test-db', 1, {
+    upgrade(db) {
+      // db.createObjectStore('favourite-number');
+
+      const productStore = db.createObjectStore('products', {
+        keyPath: 'id', autoIncrement: true
+      });
+      productStore.createIndex('by-price', 'price');
+      productStore.createIndex('by-path', 'path', { multiEntry: true });
+      productStore.createIndex('by-detail-path', 'detail_path');
+    },
+  });
+  let parsed_bkp = parse(db_bkp);
+  let json = JSON.stringify(parsed_bkp);
+  var importObject = parsed_bkp;//JSON.parse(json)
+  console.log("importObject:", importObject);
+  for (const storeName of test_db.objectStoreNames) {
+    for (const toAdd of importObject[storeName]) {
+      console.log("importObject:", toAdd);
+      for (const object of toAdd) {
+        await test_db.put(storeName, object);
+      }
+    }
+  } */
+
+  // console.log("Exported as JSON: " + JSON.stringify(exportObject));
   const indexDb = new indexDB("test");
   await indexDb.createObjectStore(["books", "students", "navigation"]);
   await indexDb.putValue("books", { name: "A Game of Thrones" });
@@ -284,12 +421,13 @@ export async function getNavigation(
     // await db.put("favourite-number", 'topnav', resp.data);
     response = resp.data;
   }
-
+  
   if (process.browser) {
     console.log("BROWSER - NAVIGATION");
     const product_exist = await db.getAll("products") || false;
     console.log("product_exist", product_exist);
-    if (product_exist.length > 0) {
+    console.log("product_exist - length : ", product_exist.length);
+    if (product_exist.length > 1300) {
 
       const response_template = await db.get("favourite-number", "page_response_place_holder");
       console.log("response_template", response_template);

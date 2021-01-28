@@ -89,138 +89,138 @@ export async function getCmsPage(
   console.log("Process:", process);
   if (process.browser) {
     console.log("BROWSER");
-    // if (self.$nuxt.isOffline) {
-    console.log("OFFLINE");
-    const db = await openDB<MyDB>('my-db-1', 1, {
-      upgrade(db) {
-        db.createObjectStore('favourite-number');
+    if (self.$nuxt.isOffline) {
+      console.log("OFFLINE");
+      const db = await openDB<MyDB>('my-db-1', 1, {
+        upgrade(db) {
+          db.createObjectStore('favourite-number');
 
-        const productStore = db.createObjectStore('products', {
-          keyPath: 'id', autoIncrement: true
-        });
-        productStore.createIndex('by-price', 'price');
-        productStore.createIndex('by-path', 'path');
-        productStore.createIndex('by-detail-path', 'detail_path');
-      },
-    });
-    if (!path) path = "/";
-    let response;
-    const unique_path_array = await db.get("favourite-number", 'unique-path-array') || 0;
-    if (unique_path_array != 0) {
-      if (unique_path_array.includes(path)) {
-        let transaction = db.transaction("products"); // readonly
-        let books = transaction.objectStore("products");
-        let priceIndex = books.index("by-price");
-
-        let request = priceIndex.getAll(17.56275);
-        console.log("Books", request);
-
-        request.then((value) => {
-          console.log(value);
-          // expected output: "Success!"
-        });
-
-        var index = books.index("by-path");
-        if (!path) path = "/";
-        var test_1 = index.getAll(path.split(','));
-
-        test_1.then((value) => {
-          console.log('match call');
-          var match = value;
-          if (match) {
-            console.log("Match");
-            console.dir(match);
-          }
-        });
-        let pathIndex = books.index("by-path");
-
-        let product_request = pathIndex.getAll(path.split(','));
-        console.log("product_request: ", product_request);
-        const response_template = await db.get("favourite-number", "page_response_place_holder");
-
-        response = product_request.then((value) => {
-          console.log(value);
-          // expected output: "Success!"
-
-          const product_exist = value;
-          console.log("product_exist", product_exist);
-          if (product_exist.length > 0) {
-            console.log("response_template", response_template);
-            if (response_template) {
-              response_template.cmsPage.sections[0].blocks[2].slots[0].data.listing.elements = [];
-
-              let array_elements = [];
-              let array_elements_media = [];
-              for (let product of product_exist) {
-                array_elements.push(product.element);
-                for (let thumbnail of product.element.cover.media.thumbnails) {
-                  if (thumbnail.width == 200)
-                    array_elements_media.push(thumbnail.url);
-                }
-              }
-              var elements_media = array_elements_media.join("','");
-              console.log("MEDIA ENDPOINTS:", elements_media);
-              response_template.cmsPage.sections[0].blocks[2].slots[0].data.listing.elements = array_elements;
-              return response_template;
-            }
-          }
-        });
-      } else {
-        const db_1 = await openDB<MyDB>('my-db-1', 1, {
-          upgrade(db) {
-            db.createObjectStore('favourite-number');
-
-            const productStore = db.createObjectStore('products', {
-              keyPath: 'id', autoIncrement: true
-            });
-            productStore.createIndex('by-price', 'price');
-          },
-        });
-        let transaction = db_1.transaction("products"); // readonly
-        let books = transaction.objectStore("products");
-        var path_index = books.index("by-detail-path");
-
-        if (!path) path = "/";
-        console.log("Path:", path);
-        let test = path_index.get(path);
-        console.log("test", test);
-        console.log("STATUS:", self.$nuxt.isOffline);
-        if (self.$nuxt.isOffline != true) {
-          console.log("--INSIDE NOT RESPONSE--NOT OFFLINE-- BEGIN", response);
-          const resp = await contextInstance.invoke.post(getPageResolverEndpoint(), {
-            path: path,
-            ...criteria,
+          const productStore = db.createObjectStore('products', {
+            keyPath: 'id', autoIncrement: true
           });
-          response = resp.data;
-          console.log("--INSIDE NOT RESPONSE--NOT OFFLINE-- END", response);
-        }
-
-        response = test.then((value) => {
-          console.log('match call');
-          var match = value;
-          if (match) {
-            console.log("DETAIL PAGE:", value.detail_page);
-
-            return value.detail_page;
-          }
-        });
-        // return response;
-      }
-    }
-
-    if (!response) {
-      console.log("--INSIDE NOT RESPONSE--BEGIN--");
-      const resp = await contextInstance.invoke.post(getPageResolverEndpoint(), {
-        path: path,
-        ...criteria,
+          productStore.createIndex('by-price', 'price');
+          productStore.createIndex('by-path', 'path', { multiEntry: true });
+          productStore.createIndex('by-detail-path', 'detail_path');
+        },
       });
-      console.log("--INSIDE NOT RESPONSE--");
-      response = resp.data;
-    }
-    console.log("--RESPONSE--", response);
-    return response;
+      if (!path) path = "/";
+      let response;
+      const unique_path_array = await db.get("favourite-number", 'unique-path-array') || 0;
+      if (unique_path_array != 0) {
+        if (unique_path_array.includes(path)) {
+          let transaction = db.transaction("products"); // readonly
+          let books = transaction.objectStore("products");
+          let priceIndex = books.index("by-price");
 
-    // }
+          let request = priceIndex.getAll(17.56275);
+          console.log("Books", request);
+
+          request.then((value) => {
+            console.log(value);
+            // expected output: "Success!"
+          });
+
+          var index = books.index("by-path");
+          if (!path) path = "/";
+          var test_1 = index.getAll(path);
+
+          test_1.then((value) => {
+            console.log('match call');
+            var match = value;
+            if (match) {
+              console.log("Match");
+              console.dir(match);
+            }
+          });
+          let pathIndex = books.index("by-path");
+
+          let product_request = pathIndex.getAll(path);
+          console.log("product_request: ", product_request);
+          const response_template = await db.get("favourite-number", "page_response_place_holder");
+
+          response = product_request.then((value) => {
+            console.log(value);
+            // expected output: "Success!"
+
+            const product_exist = value;
+            console.log("product_exist", product_exist);
+            if (product_exist.length > 0) {
+              console.log("response_template", response_template);
+              if (response_template) {
+                response_template.cmsPage.sections[0].blocks[2].slots[0].data.listing.elements = [];
+
+                let array_elements = [];
+                let array_elements_media = [];
+                for (let product of product_exist) {
+                  array_elements.push(product.element);
+                  for (let thumbnail of product.element.cover.media.thumbnails) {
+                    if (thumbnail.width == 200)
+                      array_elements_media.push(thumbnail.url);
+                  }
+                }
+                var elements_media = array_elements_media.join("','");
+                console.log("MEDIA ENDPOINTS:", elements_media);
+                response_template.cmsPage.sections[0].blocks[2].slots[0].data.listing.elements = array_elements;
+                return response_template;
+              }
+            }
+          });
+        } else {
+          const db_1 = await openDB<MyDB>('my-db-1', 1, {
+            upgrade(db) {
+              db.createObjectStore('favourite-number');
+
+              const productStore = db.createObjectStore('products', {
+                keyPath: 'id', autoIncrement: true
+              });
+              productStore.createIndex('by-price', 'price');
+            },
+          });
+          let transaction = db_1.transaction("products"); // readonly
+          let books = transaction.objectStore("products");
+          var path_index = books.index("by-detail-path");
+
+          if (!path) path = "/";
+          console.log("Path:", path);
+          let test = path_index.get(path);
+          console.log("test", test);
+          console.log("STATUS:", self.$nuxt.isOffline);
+          if (self.$nuxt.isOffline != true) {
+            console.log("--INSIDE NOT RESPONSE--NOT OFFLINE-- BEGIN", response);
+            const resp = await contextInstance.invoke.post(getPageResolverEndpoint(), {
+              path: path,
+              ...criteria,
+            });
+            response = resp.data;
+            console.log("--INSIDE NOT RESPONSE--NOT OFFLINE-- END", response);
+          }
+
+          response = test.then((value) => {
+            console.log('match call');
+            var match = value;
+            if (match) {
+              console.log("DETAIL PAGE:", value.detail_page);
+
+              return value.detail_page;
+            }
+          });
+          // return response;
+        }
+      }
+
+      if (!response) {
+        console.log("--INSIDE NOT RESPONSE--BEGIN--");
+        const resp = await contextInstance.invoke.post(getPageResolverEndpoint(), {
+          path: path,
+          ...criteria,
+        });
+        console.log("--INSIDE NOT RESPONSE--");
+        response = resp.data;
+      }
+      console.log("--RESPONSE--", response);
+      return response;
+
+    }
   } else {
     console.log("ONLINE");
     //console.log("CMS Page Response CLIENT:", resp.data.cmsPage.sections);
