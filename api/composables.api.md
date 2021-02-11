@@ -30,6 +30,7 @@ import { Order } from '@shopware-pwa/commons/interfaces/models/checkout/order/Or
 import { PaymentMethod } from '@shopware-pwa/commons/interfaces/models/checkout/payment/PaymentMethod';
 import { Product } from '@shopware-pwa/commons/interfaces/models/content/product/Product';
 import { ProductListingResult } from '@shopware-pwa/commons/interfaces/response/ProductListingResult';
+import { PropertyGroup } from '@shopware-pwa/commons/interfaces/models/content/property/PropertyGroup';
 import { RangeFilter } from '@shopware-pwa/commons/interfaces/search/SearchFilter';
 import { Ref } from '@vue/composition-api';
 import { Salutation } from '@shopware-pwa/commons/interfaces/models/system/salutation/Salutation';
@@ -54,6 +55,10 @@ export interface ApplicationVueContext extends VueConstructor {
     $route?: any;
     // (undocumented)
     $router?: any;
+    // Warning: (ae-forgotten-export) The symbol "Routing" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    $routing: Routing;
     // (undocumented)
     $shopwareApiInstance?: ShopwareApiInstance;
     // (undocumented)
@@ -70,6 +75,8 @@ export interface ApplicationVueContext extends VueConstructor {
     route?: any;
     // (undocumented)
     router?: any;
+    // (undocumented)
+    routing: Routing;
     // (undocumented)
     shopwareApiInstance?: ShopwareApiInstance;
     // (undocumented)
@@ -133,6 +140,7 @@ export function getApplicationContext(rootContext: ApplicationVueContext, key?: 
     cookies: any;
     shopwareDefaults: any;
     interceptors: any;
+    routing: Routing;
     contextName: string;
 };
 
@@ -150,9 +158,16 @@ export interface IInterceptorCallbackFunction {
 // @beta
 export const INTERCEPTOR_KEYS: {
     ADD_TO_CART: string;
+    ADD_TO_WISHLIST: string;
     ADD_PROMOTION_CODE: string;
     ERROR: string;
+    ORDER_PLACE: string;
+    SESSION_SET_CURRENCY: string;
+    SESSION_SET_PAYMENT_METHOD: string;
+    SESSION_SET_SHIPPING_METHOD: string;
     USER_LOGOUT: string;
+    USER_LOGIN: string;
+    USER_REGISTER: string;
 };
 
 // @beta
@@ -202,6 +217,8 @@ export interface IUseCart {
     // @deprecated (undocumented)
     removeProduct: ({ id }: Partial<Product>) => void;
     // (undocumented)
+    shippingTotal: ComputedRef<number>;
+    // (undocumented)
     subtotal: ComputedRef<number>;
     // (undocumented)
     totalPrice: ComputedRef<number>;
@@ -224,6 +241,10 @@ export interface IUseCheckout {
     // (undocumented)
     guestOrderParams: Ref<Readonly<Partial<GuestOrderParams>>>;
     isGuestOrder: Readonly<Ref<boolean>>;
+    // (undocumented)
+    onOrderPlace: (fn: (params: {
+        order: Order;
+    }) => void) => void;
     // (undocumented)
     paymentMethods: Readonly<Ref<readonly PaymentMethod[]>>;
     // (undocumented)
@@ -300,6 +321,20 @@ export interface IUseNavigation {
     routes: Ref<Readonly<any>>;
 }
 
+// @beta
+export interface IUseProductConfigurator {
+    // (undocumented)
+    findVariantForSelectedOptions: (options?: {
+        [key: string]: string;
+    }) => Promise<void>;
+    getOptionGroups: Ref<PropertyGroup[]>;
+    getSelectedOptions: Ref<{
+        [key: string]: string;
+    }>;
+    handleChange: (attribute: string, option: string, onChangeHandled?: Function) => Promise<void>;
+    isLoadingOptions: Ref<boolean>;
+}
+
 // @beta (undocumented)
 export interface IUseProductQuickSearch {
     // (undocumented)
@@ -324,6 +359,18 @@ export interface IUseSessionContext {
     activeShippingAddress: Readonly<Ref<ShippingAddress_2 | null>>;
     // (undocumented)
     currency: Readonly<Ref<Currency | null>>;
+    // (undocumented)
+    onCurrencyChange: (fn: (params: {
+        currency: Currency;
+    }) => void) => void;
+    // (undocumented)
+    onPaymentMethodChange: (fn: (params: {
+        paymentMethod: PaymentMethod;
+    }) => void) => void;
+    // (undocumented)
+    onShippingMethodChange: (fn: (params: {
+        shippingMethod: ShippingMethod;
+    }) => void) => void;
     // (undocumented)
     paymentMethod: Readonly<Ref<PaymentMethod | null>>;
     // (undocumented)
@@ -384,6 +431,12 @@ export interface IUseUser {
     }) => Promise<string | boolean>;
     onLogout: (fn: () => void) => void;
     // (undocumented)
+    onUserLogin: (fn: (params: {
+        customer: Customer;
+    }) => void) => void;
+    // (undocumented)
+    onUserRegister: (fn: () => void) => void;
+    // (undocumented)
     orders: Ref<Order[] | null>;
     // (undocumented)
     refreshUser: () => Promise<void>;
@@ -415,6 +468,10 @@ export interface IUseWishlist {
     isInWishlist: Ref<boolean>;
     // (undocumented)
     items: Ref<string[]>;
+    // (undocumented)
+    onAddToWishlist: (fn: (params: {
+        product: Product;
+    }) => void) => void;
     // (undocumented)
     removeFromWishlist: (id: string) => void;
 }
@@ -459,13 +516,26 @@ export interface UseCountries {
     // (undocumented)
     fetchCountries: () => Promise<void>;
     // (undocumented)
-    getCountries: Ref<Readonly<any>>;
+    getCountries: Ref<Readonly<Country[]>>;
     // (undocumented)
     mountedCallback: () => Promise<void>;
 }
 
 // @beta (undocumented)
 export const useCountries: (rootContext: ApplicationVueContext) => UseCountries;
+
+// @beta (undocumented)
+export interface UseCountry {
+    // (undocumented)
+    currentCountry: ComputedRef<Country | null>;
+    // (undocumented)
+    displayState: Readonly<Ref<boolean>>;
+    // (undocumented)
+    forceState: Readonly<Ref<boolean>>;
+}
+
+// @beta (undocumented)
+export const useCountry: (countryId: Ref<Readonly<string>>, countries: Ref<Readonly<Country[]>>) => UseCountry;
 
 // @beta (undocumented)
 export interface UseCurrency {
@@ -529,6 +599,9 @@ export interface UseProduct<PRODUCT, SEARCH> {
 
 // @beta (undocumented)
 export const useProduct: (rootContext: ApplicationVueContext, loadedProduct?: any) => UseProduct<Product, Search>;
+
+// @beta
+export const useProductConfigurator: (rootContext: ApplicationVueContext, product: Product) => IUseProductConfigurator;
 
 // @beta @deprecated (undocumented)
 export interface UseProductListing {

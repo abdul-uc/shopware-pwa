@@ -1,6 +1,6 @@
 {
   "name": "@shopware-pwa/shopware-6-client",
-  "version": "0.6.0",
+  "version": "0.7.1",
   "description": "Rest API client for Shopware 6.",
   "main": "dist/shopware-6-client.cjs.js",
   "module": "dist/shopware-6-client.esm.js",
@@ -22,12 +22,13 @@
     ]
   },
   "dependencies": {
-    "axios": "^0.21.0",
     "esbuild": "^0.8.26",
     "idb": "^5.0.8",
     "indexeddb-export-import": "^2.1.2",
     "query-string": "^6.13.8",
-    "zipson": "^0.2.12"
+    "zipson": "^0.2.12",
+    "axios": "^0.21.1",
+    "query-string": "^6.14.0"
   },
   "devDependencies": {
     "@types/query-string": "^6.3.0"

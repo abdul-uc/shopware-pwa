@@ -6,12 +6,15 @@
 
 import { Aggregations } from '@shopware-pwa/commons/interfaces/search/Aggregations';
 import { Category } from '@shopware-pwa/commons/interfaces/models/content/category/Category';
+import { CmsBlock } from '@shopware-pwa/commons/interfaces/models/content/cms/CmsBlock';
 import { CmsPage } from '@shopware-pwa/commons/interfaces/models/content/cms/CmsPage';
 import { CmsSection } from '@shopware-pwa/commons/interfaces/models/content/cms/CmsPage';
 import { CmsSlot } from '@shopware-pwa/commons/interfaces/models/content/cms/CmsPage';
 import { Country } from '@shopware-pwa/commons/interfaces/models/system/country/Country';
 import { NavigationElement } from '@shopware-pwa/commons/interfaces/models/content/navigation/Navigation';
 import { Order } from '@shopware-pwa/commons/interfaces/models/checkout/order/Order';
+import { PageResolverProductResult } from '@shopware-pwa/commons/interfaces/models/content/cms/CmsPage';
+import { PageResolverResult } from '@shopware-pwa/commons/interfaces/models/content/cms/CmsPage';
 import { Product } from '@shopware-pwa/commons/interfaces/models/content/product/Product';
 import { PropertyGroupOption } from '@shopware-pwa/commons/interfaces/models/content/property/PropertyGroupOption';
 import { Salutation } from '@shopware-pwa/commons/interfaces/models/system/salutation/Salutation';
@@ -82,8 +85,11 @@ export function getCategoryAvailableSorting({ sorting, }?: {
     sorting?: Sorting;
 }): UiCategorySorting[];
 
-// @alpha
+// @beta
 export const getCategoryUrl: (category: Partial<Category>) => string;
+
+// @beta (undocumented)
+export function getCmsLayoutConfiguration(content: CmsBlock | CmsSection): LayoutConfiguration;
 
 // @alpha (undocumented)
 export function getCmsLink(content?: CmsSlot): String;
@@ -93,6 +99,9 @@ export function getCmsLinkTarget(content?: CmsSlot): String;
 
 // @alpha (undocumented)
 export function getCmsSections(content: CmsPage): CmsSection[];
+
+// @beta (undocumented)
+export function getCmsTechnicalPath(page: PageResolverResult<CmsPage> | PageResolverProductResult): string | undefined;
 
 // @alpha (undocumented)
 export const getFilterSearchCriteria: (selectedFilters: any) => any[];
@@ -132,7 +141,7 @@ export function getProductMediaGallery({ product, }?: {
     product?: Product;
 }): UiMediaGalleryItem[];
 
-// @alpha (undocumented)
+// @beta (undocumented)
 export function getProductName({ product }?: {
     product?: Product;
 }): string | null;
@@ -146,10 +155,10 @@ export function getProductOption({ product, attribute, }?: {
     attribute?: string;
 }): PropertyGroupOption | undefined;
 
-// @alpha (undocumented)
+// @beta (undocumented)
 export function getProductOptions({ product, }?: {
     product?: Product;
-}): ProductOptions;
+}): UiProductOption[];
 
 // @alpha (undocumented)
 export function getProductOptionsUrl({ product, options, }?: {
@@ -202,11 +211,8 @@ export function getVariantOptionsLabel({ product, }?: {
     product?: Product;
 }): string | null;
 
-// Warning: (ae-incompatible-release-tags) The symbol "isOptionAvailableForSelectedOptions" is marked as @beta, but its signature references "UiProductOption" which is marked as @alpha
-// Warning: (ae-incompatible-release-tags) The symbol "isOptionAvailableForSelectedOptions" is marked as @beta, but its signature references "ProductOptions" which is marked as @alpha
-//
-// @beta
-export function isOptionAvailableForSelectedOptions(currentAttribute: string, selectedOptionId: string, { code: optionId }: UiProductOption | undefined, allOptions: ProductOptions, allSelectedOptions: {
+// @beta @deprecated
+export function isOptionAvailableForSelectedOptions(currentAttribute: string, selectedOptionId: string, { code: optionId }: UiProductOption | undefined, allOptions: any, allSelectedOptions: {
     [key: string]: string;
 }): boolean;
 
@@ -214,6 +220,21 @@ export function isOptionAvailableForSelectedOptions(currentAttribute: string, se
 export function isProductSimple({ product, }?: {
     product?: Product;
 }): boolean;
+
+// @beta (undocumented)
+export interface LayoutConfiguration {
+    // (undocumented)
+    cssClasses: string | null;
+    // (undocumented)
+    layoutStyles: {
+        backgroundColor: string | null;
+        backgroundImage: string | null;
+        marginBottom?: string | null | undefined;
+        marginLeft?: string | null | undefined;
+        marginRight?: string | null | undefined;
+        marginTop?: string | null | undefined;
+    };
+}
 
 // @beta (undocumented)
 export interface ListingFilter {
@@ -260,12 +281,6 @@ export interface NavigationRoute {
 
 // @alpha (undocumented)
 export function parseUrlQuery(query: any): SearchCriteria;
-
-// @alpha (undocumented)
-export interface ProductOptions {
-    // (undocumented)
-    [attribute: string]: UiProductOption[];
-}
 
 // @alpha (undocumented)
 export interface Sorting {
@@ -382,18 +397,14 @@ export interface UiMediaGalleryItemUrl {
     url: string;
 }
 
-// @alpha (undocumented)
+// @beta (undocumented)
 export interface UiProductOption {
-    // (undocumented)
-    attribute: string;
     // (undocumented)
     code: string;
     // (undocumented)
-    color: string;
+    color: string | null;
     // (undocumented)
     label: string;
-    // (undocumented)
-    matchingIds: string[];
     // (undocumented)
     value: string;
 }

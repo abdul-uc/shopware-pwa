@@ -29,10 +29,6 @@ export default {
   name: "SwProductCarousel",
   components: { SfSection, SfCarousel, SwProductCard },
   props: {
-    titleHeading: {
-      type: String,
-      default: "Match it",
-    },
     products: {
       type: Array,
       default: () => [],
@@ -40,6 +36,7 @@ export default {
   },
   data() {
     return {
+      style: {},
       options: {
         gap: 0,
         type: "carousel",

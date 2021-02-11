@@ -156,6 +156,7 @@
   "View": "View",
   "View details": "View details",
   "Wrong phone number": "Wrong phone number",
+  "You can not place the order": "You can not place the order",
   "You currently have no orders": "You currently have no orders",
   "You should receive a link in a few moments. Please open that link to reset your password.": "You should receive a link in a few moments. Please open that link to reset your password.",
   "You'll receive dispatch confirmation and an arrival date": "You'll receive dispatch confirmation and an arrival date",
@@ -196,5 +197,11 @@
   "We’ll save them for you here!": "We’ll save them for you here!",
   "No favourites yet": "No favourites yet",
   "Wishlist": "Wishlist",
-  "{productName} has been added to cart.": "{productName} has been added to cart."
+  "{productName} has been added to cart.": "{productName} has been added to cart.",
+  "There is no available product for selected options": "There is no available product for selected options",
+  "Leave a review!": "Leave a review!",
+  "Share your experiences with other customers.": "Share your experiences with other customers.",
+  "No comments yet": "No comments yet",
+  "We can't find what you are looking for. Are you lost?": "We can't find what you are looking for. Are you lost?",
+  "No subcategories": "No subcategories"
 }
