@@ -77,7 +77,7 @@ export async function getCmsPage(
   contextInstance: ShopwareApiInstance = defaultInstance
 ): Promise<PageResolverResult<CmsPage>> {
   contextInstance.defaults.headers["sw-include-seo-urls"] = true;
-  console.log("Search Criteria:", criteria);
+  console.log("Search Criteria-1:", criteria);
   console.log("Path:", path);
 
   let params: ShopwareSearchParams = {
@@ -213,7 +213,7 @@ export async function getCmsPage(
         const resp = await contextInstance.invoke.post(getPageResolverEndpoint(), {
           path: path,
           ...criteria,
-        });
+        }, { timeout: 300000 });
         console.log("--INSIDE NOT RESPONSE--");
         response = resp.data;
       }
@@ -227,8 +227,9 @@ export async function getCmsPage(
   }
   const resp = await contextInstance.invoke.post(getPageResolverEndpoint(), {
     path: path,
+    "no-aggregations": 1,
     ...criteria,
-  });
+  }, { timeout: 300000 });
   console.log("SERVER");
   return resp.data;
   /* if (process.browser) {
