@@ -74,7 +74,6 @@ export interface ListingQueryParams {
 export interface ShopwareSearchParams {
   p?: number | undefined;
   limit?: number | undefined;
-  "no-aggregations" ?: string | undefined;
   sort?: string | undefined;
   term?: string | undefined;
   associations?: ShopwareAssociation;

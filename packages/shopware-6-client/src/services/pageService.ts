@@ -50,7 +50,7 @@ export async function getCmsPage(
   contextInstance: ShopwareApiInstance = defaultInstance
 ): Promise<PageResolverResult<CmsPage>> {
   contextInstance.defaults.headers["sw-include-seo-urls"] = true;
-  console.log("Search Criteria-1:", criteria);
+  console.log("Search Criteria-12:", criteria);
   console.log("Path:", path);
 
   let params: ShopwareSearchParams = {
