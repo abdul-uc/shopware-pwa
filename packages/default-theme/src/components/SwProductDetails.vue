@@ -30,7 +30,7 @@
       <SfAlert
         :message="$t('Low in stock')"
         type="warning"
-        class="product-details__alert mobile-only"
+        class="product-details__alert smartphone-only"
       />
       <SfAddToCart
         v-model="quantity"
@@ -39,7 +39,11 @@
         @click="addToCart"
       >
         <template #add-to-cart-btn>
-          <SwButton class="sf-button--full-width" @click="addToCart">
+          <SwButton
+            class="sf-button--full-width"
+            @click="addToCart"
+            data-cy="button-addToCart"
+          >
             {{ $t("Add To Cart") }}
           </SwButton>
         </template>
@@ -81,17 +85,21 @@ import {
 } from "@shopware-pwa/composables"
 import { getProductUrl } from "@shopware-pwa/helpers"
 import { computed, onMounted, watch } from "@vue/composition-api"
+import SwButton from "@/components/atoms/SwButton.vue"
+
 export default {
   name: "SwProductDetails",
   components: {
     SfAlert,
     SfAddToCart,
     SfLoader,
-    SwProductHeading: () => import("@/components/SwProductHeading"),
-    SwProductSelect: () => import("@/components/SwProductSelect"),
-    SwProductTabs: () => import("@/components/SwProductTabs"),
-    SwProductColors: () => import("@/components/SwProductColors"),
-    SwPluginSlot: () => import("sw-plugins/SwPluginSlot"),
+    SwButton: () => import("@/components/atoms/SwButton.vue"),
+    SwProductHeading: () => import("@/components/SwProductHeading.vue"),
+    SwProductSelect: () => import("@/components/SwProductSelect.vue"),
+    SwProductTabs: () => import("@/components/SwProductTabs.vue"),
+    SwProductColors: () => import("@/components/SwProductColors.vue"),
+    SwPluginSlot: () => import("sw-plugins/SwPluginSlot.vue"),
+    SwButton,
   },
   props: {
     product: {
@@ -211,8 +219,8 @@ export default {
   }
   &__description {
     margin: var(--spacer-xl) 0;
-    font-family: var(--font-family-secondary);
-    font-size: var(--font-sm);
+    font-family: var(--font-family--secondary);
+    font-size: var(--font-size--sm);
   }
   &__heading {
     margin: var(--spacer-base) 0 0 0;
@@ -243,11 +251,11 @@ export default {
   }
   &__product-number {
     p {
-      font-size: var(--font-sm);
+      font-size: var(--font-size--sm);
       font-weight: bold;
 
       span {
-        font-weight: var(--font-light);
+        font-weight: var(--font-size--light);
       }
     }
   }

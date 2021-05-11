@@ -12,8 +12,8 @@
 </template>
 <script>
 import { useCheckout } from "@shopware-pwa/composables"
-import SwAddress from "@/components/SwAddress"
-import SwButton from "@/components/atoms/SwButton"
+import SwAddress from "@/components/SwAddress.vue"
+import SwButton from "@/components/atoms/SwButton.vue"
 
 export default {
   name: "BillingAddressSummary",
@@ -43,12 +43,12 @@ export default {
     }
   }
   &__title {
-    font-size: var(--font-sm);
+    font-size: var(--font-size--sm);
     margin-bottom: var(--spacer-sm);
     color: var(--c-text);
   }
   &__content {
-    font-size: var(--font-xs);
+    font-size: var(--font-size--xs);
   }
 }
 .content {

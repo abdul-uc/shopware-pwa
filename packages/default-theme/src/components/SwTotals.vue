@@ -3,7 +3,7 @@
     <SfHeading
       :title="$t('Totals')"
       :level="2"
-      class="sf-heading--left sf-heading--no-underline sw-totals__title mobile-only"
+      class="sf-heading--left sf-heading--no-underline sw-totals__title smartphone-only"
     />
     <div class="sw-totals__total">
       <SfProperty
@@ -31,7 +31,7 @@
 <script>
 import { SfProperty, SfHeading } from "@storefront-ui/vue"
 
-import SwPluginSlot from "sw-plugins/SwPluginSlot"
+import SwPluginSlot from "sw-plugins/SwPluginSlot.vue"
 
 export default {
   name: "SwTotals",
@@ -78,8 +78,8 @@ export default {
   }
   &__property {
     margin: 0 0 var(--spacer-sm) 0;
-    --property-value-font-weight: var(--font-semibold);
-    --property-value-font-size: var(--font-lg);
+    --property-value-font-weight: var(--font-weight--semibold);
+    --property-value-font-size: var(--font-size--lg);
     @include for-desktop {
       margin: 0 0 var(--spacer-sm) 0;
     }

@@ -1,85 +1,126 @@
 import Vue from "vue";
-import VueCompositionApi, {
-  reactive,
-  ref,
-  computed,
-  Ref,
-} from "@vue/composition-api";
+import VueCompositionApi, { ref, Ref } from "@vue/composition-api";
 Vue.use(VueCompositionApi);
 
 import { LineItem } from "@shopware-pwa/commons/interfaces/models/checkout/cart/line-item/LineItem";
-import { useCart } from "@shopware-pwa/composables";
 import * as shopwareClient from "@shopware-pwa/shopware-6-client";
 
 jest.mock("@shopware-pwa/shopware-6-client");
 const mockedShopwareClient = shopwareClient as jest.Mocked<
   typeof shopwareClient
 >;
+const consoleWarnSpy = jest.spyOn(console, "warn");
+const consoleErrorSpy = jest.spyOn(console, "error");
+import * as Composables from "@shopware-pwa/composables";
+jest.mock("@shopware-pwa/composables");
+const mockedComposables = Composables as jest.Mocked<typeof Composables>;
+
+import * as ErrorHandler from "../src/internalHelpers/errorHandler";
+const mockedErrorHandler = ErrorHandler as jest.Mocked<typeof ErrorHandler>;
+jest.mock("@shopware-pwa/composables/src/internalHelpers/errorHandler");
+
+import { useCart } from "../src/hooks/useCart";
 
 describe("Composables - useCart", () => {
   const stateCart: Ref<Object | null> = ref(null);
-  const stateUser: Ref<Object | null> = ref(null);
   const rootContextMock: any = {
-    $store: {
-      getters: reactive({
-        getCart: computed(() => stateCart.value),
-        getUser: computed(() => stateUser.value),
-      }),
-      commit: (name: string, value: any) => {
-        if (name === "SET_CART") {
-          stateCart.value = value;
-        }
-        if (name === "SET_USER") {
-          stateUser.value = value;
-        }
-      },
-    },
     $shopwareApiInstance: jest.fn(),
   };
+  const interceptMock = jest.fn();
+  const broadcastMock = jest.fn();
   beforeEach(() => {
     jest.resetAllMocks();
     stateCart.value = null;
-    stateUser.value = null;
+    consoleWarnSpy.mockImplementationOnce(() => {});
+    consoleErrorSpy.mockImplementationOnce(() => {});
+
+    mockedComposables.getApplicationContext.mockImplementation(() => {
+      return {
+        apiInstance: rootContextMock.$shopwareApiInstance,
+        contextName: "useCart",
+      } as any;
+    });
+    mockedComposables.useSharedState.mockImplementation(() => {
+      return {
+        sharedRef: () => stateCart,
+      } as any;
+    });
+
+    mockedErrorHandler.broadcastErrors.mockImplementation(() => jest.fn());
+    mockedComposables.useIntercept.mockImplementation(() => {
+      return {
+        broadcast: broadcastMock,
+        intercept: interceptMock,
+      } as any;
+    });
   });
   describe("computed", () => {
-    describe("shippingTotal", () => {
-      it("should return default value 0 (zero) if cart is empty", () => {
+    describe("cartErrors", () => {
+      it("should return default value [] (empty array) if cart is empty", () => {
         stateCart.value = undefined as any;
-        const { shippingTotal } = useCart(rootContextMock);
-        expect(shippingTotal.value).toBe(0);
+        const { cartErrors } = useCart(rootContextMock);
+        expect(cartErrors.value).toStrictEqual([]);
       });
-      it("should return default value 0 (zero) if there is no delivery in cart", () => {
+      it("should return array of {EntityError} typed Objects", () => {
         stateCart.value = {
-          deliveries: undefined,
-        };
-        const { shippingTotal } = useCart(rootContextMock);
-        expect(shippingTotal.value).toBe(0);
-      });
-      it("should return default value 0 (zero) if shipping costs are empty", () => {
-        stateCart.value = {
-          deliveries: [
-            {
-              shippingCosts: undefined,
+          errors: {
+            "error-1": {
+              key: "error-1",
             },
-          ],
-        };
-        const { shippingTotal } = useCart(rootContextMock);
-        expect(shippingTotal.value).toBe(0);
+            "error-2": {
+              key: "error-2",
+            },
+          },
+        } as any;
+        const { cartErrors } = useCart(rootContextMock);
+        expect(cartErrors.value).toStrictEqual([
+          {
+            key: "error-1",
+          },
+          {
+            key: "error-2",
+          },
+        ]);
       });
-      it("should return total price from shipping cost of the first delivery from cart", () => {
-        stateCart.value = {
-          deliveries: [
-            {
-              shippingCosts: {
-                totalPrice: 199.5,
+    }),
+      describe("shippingTotal", () => {
+        it("should return default value 0 (zero) if cart is empty", () => {
+          stateCart.value = undefined as any;
+          const { shippingTotal } = useCart(rootContextMock);
+          expect(shippingTotal.value).toBe(0);
+        });
+        it("should return default value 0 (zero) if there is no delivery in cart", () => {
+          stateCart.value = {
+            deliveries: undefined,
+          };
+          const { shippingTotal } = useCart(rootContextMock);
+          expect(shippingTotal.value).toBe(0);
+        });
+        it("should return default value 0 (zero) if shipping costs are empty", () => {
+          stateCart.value = {
+            deliveries: [
+              {
+                shippingCosts: undefined,
               },
-            },
-          ],
-        };
-        const { shippingTotal } = useCart(rootContextMock);
-        expect(shippingTotal.value).toBe(199.5);
+            ],
+          };
+          const { shippingTotal } = useCart(rootContextMock);
+          expect(shippingTotal.value).toBe(0);
+        });
+        it("should return total price from shipping cost of the first delivery from cart", () => {
+          stateCart.value = {
+            deliveries: [
+              {
+                shippingCosts: {
+                  totalPrice: 199.5,
+                },
+              },
+            ],
+          };
+          const { shippingTotal } = useCart(rootContextMock);
+          expect(shippingTotal.value).toBe(199.5);
+        });
       });
-    });
     describe("cart", () => {
       it("should be null on not loaded cart", () => {
         stateCart.value = null;
@@ -274,8 +315,37 @@ describe("Composables - useCart", () => {
           rootContextMock.$shopwareApiInstance
         );
       });
-    });
 
+      it("should display deprecation message", async () => {
+        const { count, removeProduct } = useCart(rootContextMock);
+        stateCart.value = {
+          lineItems: [{ quantity: 3, type: "product" }],
+        };
+        expect(count.value).toEqual(3);
+        mockedShopwareClient.removeCartItem.mockResolvedValueOnce({
+          lineItems: [],
+        } as any);
+        await removeProduct({ id: "qwe" });
+        expect(consoleWarnSpy).toBeCalledWith(
+          '[DEPRECATED][@shopware-pwa/composables][removeProduct] This method has been deprecated. Use "removeItem" instead.'
+        );
+      });
+    });
+    describe("submitPromotionCode", () => {
+      it("should execute the addPromotionCode method if promotion code is not falsy", async () => {
+        const { addPromotionCode } = useCart(rootContextMock);
+        await addPromotionCode("PROMO-CODE-123!");
+        mockedShopwareClient.addPromotionCode.mockResolvedValueOnce({
+          lineItems: [{ quantity: 1, type: "promotion" }],
+        } as any);
+        expect(mockedShopwareClient.addPromotionCode).toBeCalledTimes(1);
+      });
+      it("should not execute the addPromotionCode method if promotion code is undefined or null", async () => {
+        const { addPromotionCode } = useCart(rootContextMock);
+        await addPromotionCode(undefined as any);
+        expect(mockedShopwareClient.addPromotionCode).toBeCalledTimes(0);
+      });
+    });
     describe("addPromotionCode", () => {
       it("should add promotion code to cart", async () => {
         const { appliedPromotionCodes, addPromotionCode } = useCart(
@@ -340,6 +410,69 @@ describe("Composables - useCart", () => {
           6,
           rootContextMock.$shopwareApiInstance
         );
+      });
+    });
+    describe("broadcastUpcomingErrors", () => {
+      it("should catch the exception while the errors are trying to be broadcasted", async () => {
+        const { addProduct } = useCart(rootContextMock);
+        mockedShopwareClient.addProductToCart.mockResolvedValueOnce({
+          errors: {
+            "error-1": {
+              key: "some-error-key",
+            },
+          },
+        } as any);
+        mockedErrorHandler.broadcastErrors.mockImplementation(() => {
+          throw new Error("An error occured");
+        });
+        await addProduct({ id: "someId", quantity: 1 });
+        expect(consoleErrorSpy).toBeCalledWith(
+          "[useCart][broadcastUpcomingErrors]",
+          expect.any(Object)
+        );
+      });
+      it("should not invoke broadcastErrors helper when there is no new cart result - changeCartItemQuantity", async () => {
+        const { changeProductQuantity } = useCart(rootContextMock);
+        mockedShopwareClient.changeCartItemQuantity.mockResolvedValueOnce(
+          undefined as any
+        );
+        await changeProductQuantity({ id: "qwerty", quantity: 6 });
+        expect(mockedErrorHandler.broadcastErrors).toBeCalledTimes(0);
+      });
+      it("should not invoke broadcastErrors helper when there is no new cart result - addProduct", async () => {
+        const { addProduct } = useCart(rootContextMock);
+        mockedShopwareClient.addProductToCart.mockResolvedValueOnce(
+          undefined as any
+        );
+        await addProduct({ id: "qwerty", quantity: 6 });
+        expect(mockedErrorHandler.broadcastErrors).toBeCalledTimes(0);
+      });
+      it("should not invoke broadcastErrors helper when there is no new cart result - removeItem", async () => {
+        const { removeItem } = useCart(rootContextMock);
+        mockedShopwareClient.removeCartItem.mockResolvedValueOnce(
+          undefined as any
+        );
+        await removeItem({ referencedId: "qwerty" } as any);
+        expect(mockedErrorHandler.broadcastErrors).toBeCalledTimes(0);
+      });
+      it("should invoke broadcastErrors helper once there is a new error in cart response", async () => {
+        const { removeItem } = useCart(rootContextMock);
+        mockedShopwareClient.removeCartItem.mockResolvedValueOnce({
+          errors: {
+            "error-id": {
+              id: "error-id",
+              name: "product stock reached",
+              quantity: 55,
+              message: "too many products added to cart",
+              code: 0,
+              key: "product-stock-reached-productId",
+              level: 10,
+              messageKey: "product-stock-reached",
+            },
+          },
+        } as any);
+        await removeItem({ referencedId: "qwerty" } as any);
+        expect(mockedErrorHandler.broadcastErrors).toBeCalledTimes(1);
       });
     });
   });

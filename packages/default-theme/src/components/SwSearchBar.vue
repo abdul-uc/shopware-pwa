@@ -6,8 +6,7 @@
       :aria-label="$t('Search for products')"
       class="sf-header__search"
       data-cy="search-bar"
-      @enter="performSearch"
-      @focus="isSuggestBoxOpen = true"
+      @keydown.enter="performSearch"
     />
 
     <SwSuggestSearch
@@ -32,7 +31,7 @@ import {
   unMapMobileObserver,
 } from "@storefront-ui/vue/src/utilities/mobile-observer"
 import { debounce } from "@shopware-pwa/helpers"
-const SwSuggestSearch = () => import("@/components/SwSuggestSearch")
+const SwSuggestSearch = () => import("@/components/SwSuggestSearch.vue")
 
 export default {
   components: {
@@ -98,6 +97,7 @@ export default {
 
 ::v-deep .sf-search-bar {
   --search-bar-width: 100%;
+  --search-bar-font-size: var(--font-size--sm);
 }
 
 .sw-search-bar {

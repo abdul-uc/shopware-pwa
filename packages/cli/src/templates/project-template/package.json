@@ -1,0 +1,33 @@
+{
+  "name": "shopware-pwa-project",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "shopware-pwa dev",
+    "build": "shopware-pwa build",
+    "start": "nuxt start",
+    "generate": "nuxt generate",
+    "test": "jest",
+    "lint": "prettier --write '*.{js,vue}'"
+  },
+  "dependencies": {
+    "@nuxtjs/axios": "^5.13.1",
+    "@nuxtjs/pwa": "^3.3.5",
+    "core-js": "^3.11.0",
+    "nuxt": "^2.15.4"
+  },
+  "devDependencies": {
+    "@shopware-pwa/nuxt-module": "latest",
+    "@storefront-ui/vue": "0.10.5",
+    "@vue/test-utils": "^1.1.4",
+    "@vuelidate/core": "^2.0.0-alpha.16",
+    "@vuelidate/validators": "^2.0.0-alpha.13",
+    "babel-core": "7.0.0-bridge.0",
+    "babel-jest": "^26.6.3",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^3.4.0",
+    "jest": "^26.6.3",
+    "prettier": "^2.2.1",
+    "vue-jest": "^3.0.7"
+  }
+}

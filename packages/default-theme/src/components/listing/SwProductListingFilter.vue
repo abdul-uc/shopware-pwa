@@ -14,7 +14,8 @@
 
 <script>
 import { SfFilter } from "@storefront-ui/vue"
-import NoFilterFound from "@/components/listing/NoFilterFound"
+import NoFilterFound from "@/components/listing/NoFilterFound.vue"
+import { simplifyString } from "@/helpers"
 
 export default {
   name: "SwProductListingFilter",
@@ -44,13 +45,16 @@ export default {
       try {
         return () => ({
           component: import(
-            "@/components/listing/types/" + this.filter.label.toLowerCase()
+            `@/components/listing/types/${this.filterCode}.vue`
           ),
           error: NoFilterFound,
         })
       } catch (e) {
         console.error("SwProductListingFilter:getComponent", e)
       }
+    },
+    filterCode() {
+      return simplifyString(this.filter.label.toLowerCase())
     },
     selectedValues() {
       return this.selectedFilters || []

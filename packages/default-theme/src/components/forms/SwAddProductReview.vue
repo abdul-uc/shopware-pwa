@@ -46,7 +46,7 @@
 
       <SwButton
         v-if="!isLoggedIn"
-        class="login button"
+        class="login button color"
         @click="switchLoginModalState"
       >
         {{ $t("Log in") }}
@@ -66,9 +66,6 @@
 import { SfHeading, SfDivider } from "@storefront-ui/vue"
 import { addProductReview } from "@shopware-pwa/shopware-6-client"
 import { getMessagesFromErrorsArray } from "@shopware-pwa/helpers"
-import SwButton from "@/components/atoms/SwButton"
-import SwInput from "@/components/atoms/SwInput"
-import SwErrorsList from "@/components/SwErrorsList"
 import { ref, computed } from "@vue/composition-api"
 import {
   useUser,
@@ -79,11 +76,12 @@ import {
 export default {
   name: "SwAddProductReview",
   components: {
-    SwInput,
-    SwButton,
-    SwErrorsList,
     SfHeading,
     SfDivider,
+    SwInput: () => import("@/components/atoms/SwInput.vue"),
+    SwButton: () => import("@/components/atoms/SwButton.vue"),
+    SwErrorsList: () => import("@/components/SwErrorsList.vue"),
+    SwRating: () => import("@/components/atoms/SwRating.vue"),
   },
   props: {
     productId: {
@@ -169,7 +167,7 @@ export default {
   .description-field {
     border: 1px solid var(--c-light);
     box-sizing: border-box;
-    font-size: var(--font-lg);
+    font-size: var(--font-size--lg);
     margin-top: var(--spacer-base);
     min-height: 200px;
     padding: var(--spacer-base);
@@ -185,6 +183,9 @@ export default {
   background-color: var(--_c-gray-primary);
   width: 100%;
   margin-top: var(--spacer-base);
+  &:active {
+    background: var(--c-link);
+  }
 }
 
 .sw-rating {

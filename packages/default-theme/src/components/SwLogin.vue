@@ -11,7 +11,7 @@
       />
       <SwInput
         v-model="email"
-        name="email"
+        name="loginEmail"
         :label="$t('Your email')"
         class="sw-form__input"
         type="email"
@@ -23,7 +23,7 @@
       />
       <SwInput
         v-model="password"
-        name="password"
+        name="loginPassword"
         :label="$t('Password')"
         type="password"
         class="sw-form__input"
@@ -49,17 +49,16 @@
 
 <script>
 import { SfAlert } from "@storefront-ui/vue"
-import { validationMixin } from "vuelidate"
-import { required, email } from "vuelidate/lib/validators"
+import useVuelidate from "@vuelidate/core"
+import { required, email } from "@vuelidate/validators"
 import { useUser, useSessionContext } from "@shopware-pwa/composables"
-import SwPluginSlot from "sw-plugins/SwPluginSlot"
-import SwButton from "@/components/atoms/SwButton"
-import SwInput from "@/components/atoms/SwInput"
+import SwPluginSlot from "sw-plugins/SwPluginSlot.vue"
+import SwButton from "@/components/atoms/SwButton.vue"
+import SwInput from "@/components/atoms/SwInput.vue"
 
 export default {
   name: "SwLogin",
   components: { SwButton, SwInput, SfAlert, SwPluginSlot },
-  mixins: [validationMixin],
   data() {
     return {
       email: "",
@@ -74,6 +73,7 @@ export default {
       isLoading: loading,
       userError,
       refreshSessionContext,
+      $v: useVuelidate(),
     }
   },
   validations: {

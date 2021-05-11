@@ -8,14 +8,18 @@ import {
 } from "@shopware-pwa/shopware-6-client";
 import { ClientApiError } from "@shopware-pwa/commons/interfaces/errors/ApiError";
 import { Cart } from "@shopware-pwa/commons/interfaces/models/checkout/cart/Cart";
+import { EntityError } from "@shopware-pwa/commons/interfaces/models/common/EntityError";
+
 import { Product } from "@shopware-pwa/commons/interfaces/models/content/product/Product";
 import { LineItem } from "@shopware-pwa/commons/interfaces/models/checkout/cart/line-item/LineItem";
 import {
   getApplicationContext,
   INTERCEPTOR_KEYS,
   useIntercept,
+  useSharedState,
 } from "@shopware-pwa/composables";
 import { ApplicationVueContext } from "../../appContext";
+import { broadcastErrors } from "../../internalHelpers/errorHandler";
 import { deprecationWarning } from "@shopware-pwa/commons";
 
 /**
@@ -33,7 +37,7 @@ export interface IUseCart {
   }) => Promise<void>;
   addPromotionCode: (promotionCode: string) => Promise<void>;
   appliedPromotionCodes: ComputedRef<LineItem[]>;
-  cart: ComputedRef<Cart>;
+  cart: ComputedRef<Cart | null>;
   cartItems: ComputedRef<LineItem[]>;
   changeProductQuantity: ({
     id,
@@ -54,6 +58,7 @@ export interface IUseCart {
   totalPrice: ComputedRef<number>;
   shippingTotal: ComputedRef<number>;
   subtotal: ComputedRef<number>;
+  cartErrors: ComputedRef<EntityError[]>;
 }
 
 /**
@@ -62,7 +67,7 @@ export interface IUseCart {
  * @beta
  */
 export const useCart = (rootContext: ApplicationVueContext): IUseCart => {
-  const { vuexStore, apiInstance } = getApplicationContext(
+  const { apiInstance, contextName } = getApplicationContext(
     rootContext,
     "useCart"
   );
@@ -71,11 +76,15 @@ export const useCart = (rootContext: ApplicationVueContext): IUseCart => {
   const loading: Ref<boolean> = ref(false);
   const error: Ref<any> = ref(null);
 
+  const { sharedRef } = useSharedState(rootContext);
+  const _storeCart = sharedRef<Cart>(`${contextName}-cart`);
+
   async function refreshCart(): Promise<void> {
     loading.value = true;
     try {
       const result = await getCart(apiInstance);
-      vuexStore.commit("SET_CART", result);
+      broadcastUpcomingErrors(result);
+      _storeCart.value = result;
     } catch (e) {
       const err: ClientApiError = e;
       error.value = err.message;
@@ -91,13 +100,15 @@ export const useCart = (rootContext: ApplicationVueContext): IUseCart => {
     id: string;
     quantity?: number;
   }) {
-    const result = await addProductToCart(id, quantity, apiInstance);
-    vuexStore.commit("SET_CART", result);
+    const addToCartResult = await addProductToCart(id, quantity, apiInstance);
+    broadcastUpcomingErrors(addToCartResult);
+    _storeCart.value = addToCartResult;
   }
 
   async function removeItem({ id }: LineItem) {
     const result = await removeCartItem(id, apiInstance);
-    vuexStore.commit("SET_CART", result);
+    broadcastUpcomingErrors(result);
+    _storeCart.value = result;
   }
 
   // TODO: remove in 1.0
@@ -112,16 +123,41 @@ export const useCart = (rootContext: ApplicationVueContext): IUseCart => {
 
   async function changeProductQuantity({ id, quantity }: any) {
     const result = await changeCartItemQuantity(id, quantity, apiInstance);
-    vuexStore.commit("SET_CART", result);
+    broadcastUpcomingErrors(result);
+    _storeCart.value = result;
   }
 
-  async function sumbitPromotionCode(promotionCode: string) {
-    const result = await addPromotionCode(promotionCode, apiInstance);
-    vuexStore.commit("SET_CART", result);
-    broadcast(INTERCEPTOR_KEYS.ADD_PROMOTION_CODE, {
-      result,
-      promotionCode,
-    });
+  async function submitPromotionCode(promotionCode: string) {
+    if (promotionCode) {
+      const result = await addPromotionCode(promotionCode, apiInstance);
+      ``;
+      _storeCart.value = result;
+      broadcast(INTERCEPTOR_KEYS.ADD_PROMOTION_CODE, {
+        result,
+        promotionCode,
+      });
+    }
+  }
+
+  function broadcastUpcomingErrors(cartResult: Cart): void {
+    if (!cartResult) {
+      return;
+    }
+
+    try {
+      const cartErrorsKeys = Object.keys(_storeCart.value?.errors || {});
+      const cartResultErrorKeys = Object.keys(cartResult.errors || {});
+      const upcomingErrorsKeys = cartResultErrorKeys.filter(
+        (resultErrorKey) => !cartErrorsKeys.includes(resultErrorKey)
+      );
+      const entityErrors: EntityError[] = Object.values(
+        cartResult.errors || {}
+      ).filter((entityError) => upcomingErrorsKeys.includes(entityError.key));
+
+      broadcastErrors(entityErrors, `[${contextName}][cartError]`, rootContext);
+    } catch (error) {
+      console.error("[useCart][broadcastUpcomingErrors]", error);
+    }
   }
 
   const appliedPromotionCodes = computed(() => {
@@ -130,9 +166,7 @@ export const useCart = (rootContext: ApplicationVueContext): IUseCart => {
     );
   });
 
-  const cart: ComputedRef<Cart> = computed(() => {
-    return vuexStore.getters.getCart;
-  });
+  const cart: ComputedRef<Cart | null> = computed(() => _storeCart.value);
 
   const cartItems = computed(() => {
     return cart.value ? cart.value.lineItems || [] : [];
@@ -165,9 +199,13 @@ export const useCart = (rootContext: ApplicationVueContext): IUseCart => {
     return cartPrice || 0;
   });
 
+  const cartErrors: ComputedRef<EntityError[]> = computed(
+    () => (cart.value?.errors && Object.values(cart.value.errors)) || []
+  );
+
   return {
     addProduct,
-    addPromotionCode: sumbitPromotionCode,
+    addPromotionCode: submitPromotionCode,
     appliedPromotionCodes,
     cart,
     cartItems,
@@ -181,5 +219,6 @@ export const useCart = (rootContext: ApplicationVueContext): IUseCart => {
     totalPrice,
     shippingTotal,
     subtotal,
+    cartErrors,
   };
 };

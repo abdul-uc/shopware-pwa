@@ -11,7 +11,7 @@
     </div>
     <div class="summary__action">
       <SwButton
-        class="sf-button--full-width summary__action-button summary__action-button--secondary color-secondary desktop-only"
+        class="summary__action-button summary__action-button--secondary color-secondary sw-form__button"
         data-cy="go-back-to-payment"
         @click="$emit('click:back')"
       >
@@ -19,25 +19,18 @@
       </SwButton>
       <SwButton
         :disabled="!cartItems.length"
-        class="sf-button--full-width summary__action-button"
+        class="summary__action-button sw-form__button"
         data-cy="place-my-order"
         @click="$emit('proceed')"
       >
         {{ $t("Place my order") }}
-      </SwButton>
-      <SwButton
-        class="sf-button--full-width sf-button--text summary__action-button summary__action-button--secondary mobile-only"
-        @click="$emit('click:back')"
-      >
-        {{ $t("Go back to Payment") }}
       </SwButton>
     </div>
   </div>
 </template>
 <script>
 import { useCart } from "@shopware-pwa/composables"
-import SwTotals from "@/components/SwTotals"
-import helpers from "@/helpers"
+import SwTotals from "@/components/SwTotals.vue"
 
 import {
   SfProperty,
@@ -45,7 +38,7 @@ import {
   SfHeading,
   SfNotification,
 } from "@storefront-ui/vue"
-import SwButton from "@/components/atoms/SwButton"
+import SwButton from "@/components/atoms/SwButton.vue"
 
 export default {
   name: "TotalsSummary",
@@ -86,7 +79,6 @@ export default {
 @import "@/assets/scss/variables";
 
 .summary {
-  margin: 0 calc(var(--spacer-base) * -1);
   &__group {
     padding: var(--spacer-base) var(--spacer-xl);
     background-color: var(--c-light);
@@ -111,26 +103,28 @@ export default {
     }
   }
   &__action {
-    padding: var(--spacer-base);
-    flex: 0 0 100%;
     margin: var(--spacer-base) 0 0 0;
-    @include for-desktop {
-      display: flex;
-    }
-  }
-  &__action-button {
-    --button-height: 3.25rem;
-    @include for-desktop {
-      --button-font-weight: var(--font-normal);
-      &:first-child {
-        margin: 0 var(--spacer-lg) 0 0;
+    display: flex;
+    flex-wrap: wrap;
+
+    button {
+      width: 100%;
+      @include for-desktop {
+        width: 50%;
+      }
+
+      &:last-child {
+        @include for-mobile {
+          margin-top: var(--spacer-base);
+        }
       }
     }
   }
+
   &__property {
     margin: 0 0 var(--spacer-sm) 0;
-    --property-value-font-weight: var(--font-semibold);
-    --property-value-font-size: var(--font-base);
+    --property-value-font-weight: var(--font-weight--semibold);
+    --property-value-font-size: var(--font-size--base);
     @include for-desktop {
       margin: 0 0 var(--spacer-sm) 0;
     }

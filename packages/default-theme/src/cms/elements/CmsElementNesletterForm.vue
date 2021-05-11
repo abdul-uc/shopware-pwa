@@ -11,7 +11,7 @@
             ? $t('Subscribe to Newsletter')
             : $t('Subscribed to Newsletter!')
         "
-        :subtitle="
+        :description="
           !formSent
             ? $t(
                 'Be aware of upcoming sales and events. Receive gifts and special offers!'
@@ -69,14 +69,14 @@
 
 <script>
 import { SfInput, SfHeading } from "@storefront-ui/vue"
-import { validationMixin } from "vuelidate"
-import { required, email } from "vuelidate/lib/validators"
-import SwButton from "@/components/atoms/SwButton"
+import useVuelidate from "@vuelidate/core"
+import { required, email } from "@vuelidate/validators"
+import SwButton from "@/components/atoms/SwButton.vue"
 import { newsletterSubscribe } from "@shopware-pwa/shopware-6-client"
 import { ref } from "@vue/composition-api"
 import { getApplicationContext } from "@shopware-pwa/composables"
 import { getMessagesFromErrorsArray } from "@shopware-pwa/helpers"
-import SwErrorsList from "@/components/SwErrorsList"
+import SwErrorsList from "@/components/SwErrorsList.vue"
 
 export default {
   name: "CmsElementNewsletterForm",
@@ -86,7 +86,6 @@ export default {
     SfHeading,
     SwErrorsList,
   },
-  mixins: [validationMixin],
   props: {
     content: {
       type: Object,
@@ -127,6 +126,7 @@ export default {
       sendForm,
       errorMessages,
       formSent,
+      $v: useVuelidate(),
     }
   },
   methods: {
@@ -154,7 +154,7 @@ export default {
 
 .cms-element-sign-to-newsletter {
   --heading-title-color: var(--c-white);
-  --heading-subtitle-color: var(--c-white);
+  --heading-description-color: var(--c-white);
 
   align-items: center;
   background-color: rgba($color: #000000, $alpha: 0.7);

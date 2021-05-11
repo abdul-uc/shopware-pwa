@@ -2,7 +2,7 @@
   <div :key="$route.fullPath" class="order-page">
     <SfHeading
       :title="$t('Thank you')"
-      :subtitle="$t('for shopping with us!')"
+      :description="$t('for shopping with us!')"
       class="order-page__heading"
     />
     <SfDivider />
@@ -16,9 +16,9 @@
 <script>
 import { SfHeading, SfIcon, SfDivider } from "@storefront-ui/vue"
 import { computed } from "@vue/composition-api"
-import SwButton from "@/components/atoms/SwButton"
-
-import SwOrderDetails from "@/components/SwOrderDetails"
+import { useBreadcrumbs } from "@shopware-pwa/composables"
+import SwButton from "@/components/atoms/SwButton.vue"
+import SwOrderDetails from "@/components/SwOrderDetails.vue"
 
 export default {
   name: "OrderPage",
@@ -32,7 +32,15 @@ export default {
   data() {
     return {}
   },
-  setup(params, { root }) {
+  setup({}, { root }) {
+    const { setBreadcrumbs } = useBreadcrumbs(root)
+    setBreadcrumbs([
+      {
+        name: root.$t("Thank you"),
+        path: "/",
+      },
+    ])
+
     const orderId = computed(() => root.$route.query.orderId)
 
     return {

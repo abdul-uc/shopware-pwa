@@ -14,7 +14,11 @@
       </div>
 
       <div v-else class="no-results">
-        <SfImage class="image" :src="require('@/assets/hearts.svg')" />
+        <SfImage
+          class="image"
+          :src="require('@/assets/hearts.svg')"
+          alt="wishlist-heart"
+        />
 
         <SfHeading
           :title="$t('No favourites yet')"
@@ -33,10 +37,15 @@
 
 <script>
 import { getProducts } from "@shopware-pwa/shopware-6-client"
-import { getApplicationContext, useWishlist } from "@shopware-pwa/composables"
-import SwProductCard from "@/components/SwProductCard"
+import {
+  getApplicationContext,
+  useWishlist,
+  useBreadcrumbs,
+} from "@shopware-pwa/composables"
+import SwProductCard from "@/components/SwProductCard.vue"
 import { SfHeading, SfImage, SfLoader } from "@storefront-ui/vue"
 import { onMounted, ref, watch } from "@vue/composition-api"
+import { PAGE_WISHLIST } from "@/helpers/pages"
 
 export default {
   name: "Wishlist",
@@ -46,6 +55,7 @@ export default {
     SfImage,
     SfLoader,
   },
+
   props: {
     product: {
       type: Object,
@@ -54,10 +64,18 @@ export default {
   },
   setup({}, { root }) {
     const { removeFromWishlist, items } = useWishlist(root)
+    const { setBreadcrumbs } = useBreadcrumbs(root)
     const { apiInstance } = getApplicationContext(root, "Wishlist")
 
     const products = ref([])
     const isLoading = ref(false)
+
+    setBreadcrumbs([
+      {
+        name: root.$t("Wishlist"),
+        path: PAGE_WISHLIST,
+      },
+    ])
 
     const loadProductsByItemIds = async (itemIds) => {
       isLoading.value = true
@@ -112,15 +130,25 @@ export default {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    --heading-title-font-weight: var(--font-weight--normal);
+    --heading-title-font-size: var(--font-size--base);
 
     .main-headline {
       --heading-title-color: var(--c-primary);
+      --heading-title-font-size: var(--h2-font-size);
+      --heading-title-font-weight: var(--font-weight--semibold);
       margin-bottom: var(--spacer-xl);
     }
 
     .image {
-      margin-bottom: var(--spacer-2xl);
-      margin-top: var(--spacer-2xl);
+      margin-bottom: var(--spacer-xl);
+      margin-top: var(--spacer-xl);
+      --image-width: 200px;
+      @include for-desktop {
+        margin-bottom: var(--spacer-2xl);
+        margin-top: var(--spacer-2xl);
+        --image-width: 300px;
+      }
     }
   }
 

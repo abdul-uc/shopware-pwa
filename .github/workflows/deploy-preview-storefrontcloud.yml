@@ -1,7 +1,5 @@
 name: Deploy PR Preview on Storefrontcloud
 env:
-  CANARY_SW6_INSTANCE: https://pwa-demo-api.shopware.com
-  CANARY_SW6_INSTANCE_TOKEN: SWSC40-LJTNO6COUEN7CJMXKLA
   PWA_HOST: https://shopware-pwa-canary.storefrontcloud.io
   INSTANCE_CODE: shopware-pwa-canary
 on:
@@ -16,9 +14,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: "12.x"
+          node-version: "14"
       - name: Cache node_modules
         uses: actions/cache@v2
         id: step-cache-node-modules
@@ -28,7 +26,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}
       - name: Install dependencies
         if: steps.step-cache-node-modules.outputs.cache-hit != 'true'
         run: |
@@ -44,9 +42,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: "12.x"
+          node-version: "14"
       - name: Check hash for directory packages/cli
         id: folder-hash-step-cli
         run: |
@@ -61,7 +59,7 @@ jobs:
         with:
           path: |
             packages/cli/build
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}-${{ steps.folder-hash-step-cli.outputs.hash }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}-${{ steps.folder-hash-step-cli.outputs.hash }}
       - name: Cache node_modules
         if: steps.step-cache-build.outputs.cache-hit != 'true'
         uses: actions/cache@v2
@@ -71,7 +69,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}
       - name: Build CLI
         if: steps.step-cache-build.outputs.cache-hit != 'true'
         run: |
@@ -88,9 +86,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: "12.x"
+          node-version: "14"
       - name: Check hash for directory packages/composables
         id: folder-hash-step-composables
         run: |
@@ -105,7 +103,7 @@ jobs:
         with:
           path: |
             packages/composables/dist
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}-${{ steps.folder-hash-step-composables.outputs.hash }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}-${{ steps.folder-hash-step-composables.outputs.hash }}
       - name: Cache node_modules
         if: steps.step-cache-build.outputs.cache-hit != 'true'
         uses: actions/cache@v2
@@ -115,7 +113,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}
       - name: Build Composables
         if: steps.step-cache-build.outputs.cache-hit != 'true'
         run: |
@@ -131,9 +129,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: "12.x"
+          node-version: "14"
       - name: Check hash for directory packages/helpers
         id: folder-hash-step-helpers
         run: |
@@ -148,7 +146,7 @@ jobs:
         with:
           path: |
             packages/helpers/dist
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}-${{ steps.folder-hash-step-helpers.outputs.hash }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}-${{ steps.folder-hash-step-helpers.outputs.hash }}
       - name: Cache node_modules
         if: steps.step-cache-build.outputs.cache-hit != 'true'
         uses: actions/cache@v2
@@ -158,7 +156,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}
       - name: Build helpers
         if: steps.step-cache-build.outputs.cache-hit != 'true'
         run: |
@@ -174,9 +172,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: "12.x"
+          node-version: "14"
       - name: Check hash for directory packages/nuxt-module
         id: folder-hash-step-nuxt-module
         run: |
@@ -191,7 +189,7 @@ jobs:
         with:
           path: |
             packages/nuxt-module/dist
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}-${{ steps.folder-hash-step-nuxt-module.outputs.hash }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}-${{ steps.folder-hash-step-nuxt-module.outputs.hash }}
       - name: Cache node_modules
         if: steps.step-cache-build.outputs.cache-hit != 'true'
         uses: actions/cache@v2
@@ -201,7 +199,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}
       - name: Build nuxt-module
         if: steps.step-cache-build.outputs.cache-hit != 'true'
         run: |
@@ -217,9 +215,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: "12.x"
+          node-version: "14"
       - name: Check hash for directory packages/shopware-6-client
         id: folder-hash-step-shopware-6-client
         run: |
@@ -234,7 +232,7 @@ jobs:
         with:
           path: |
             packages/shopware-6-client/dist
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}-${{ steps.folder-hash-step-shopware-6-client.outputs.hash }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}-${{ steps.folder-hash-step-shopware-6-client.outputs.hash }}
       - name: Cache node_modules
         if: steps.step-cache-build.outputs.cache-hit != 'true'
         uses: actions/cache@v2
@@ -244,7 +242,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}
       - name: Build shopware-6-client
         if: steps.step-cache-build.outputs.cache-hit != 'true'
         run: |
@@ -260,9 +258,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: "12.x"
+          node-version: "14"
       - name: Check hash for directory packages/default-theme
         id: folder-hash-step-default-theme
         run: |
@@ -277,7 +275,7 @@ jobs:
         with:
           path: |
             packages/default-theme/dist
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}-${{ steps.folder-hash-step-default-theme.outputs.hash }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}-${{ steps.folder-hash-step-default-theme.outputs.hash }}
       - name: Cache node_modules
         if: steps.step-cache-build.outputs.cache-hit != 'true'
         uses: actions/cache@v2
@@ -287,10 +285,11 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}
       - name: Build default-theme
         if: steps.step-cache-build.outputs.cache-hit != 'true'
         run: |
+          node scripts/linkDependencies.js && yarn lerna link
           yarn build default-theme --ci
 
   create-test-project:
@@ -309,9 +308,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: "12.x"
+          node-version: "14"
       - name: Cache cli build
         uses: actions/cache@v2
         env:
@@ -319,7 +318,7 @@ jobs:
         with:
           path: |
             packages/cli/build
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}-${{ needs.build-cli.outputs.package-hash }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}-${{ needs.build-cli.outputs.package-hash }}
       - name: Cache composables build
         uses: actions/cache@v2
         env:
@@ -327,7 +326,7 @@ jobs:
         with:
           path: |
             packages/composables/dist
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}-${{ needs.build-composables.outputs.package-hash }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}-${{ needs.build-composables.outputs.package-hash }}
       - name: Cache helpers build
         uses: actions/cache@v2
         env:
@@ -335,7 +334,7 @@ jobs:
         with:
           path: |
             packages/helpers/dist
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}-${{ needs.build-helpers.outputs.package-hash }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}-${{ needs.build-helpers.outputs.package-hash }}
       - name: Cache nuxt-module build
         uses: actions/cache@v2
         env:
@@ -343,7 +342,7 @@ jobs:
         with:
           path: |
             packages/nuxt-module/dist
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}-${{ needs.build-nuxt-module.outputs.package-hash }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}-${{ needs.build-nuxt-module.outputs.package-hash }}
       - name: Cache shopware-6-client build
         uses: actions/cache@v2
         env:
@@ -351,7 +350,7 @@ jobs:
         with:
           path: |
             packages/shopware-6-client/dist
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}-${{ needs.build-shopware-6-client.outputs.package-hash }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}-${{ needs.build-shopware-6-client.outputs.package-hash }}
       - name: Cache default-theme build
         uses: actions/cache@v2
         env:
@@ -359,7 +358,7 @@ jobs:
         with:
           path: |
             packages/default-theme/dist
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}-${{ needs.build-default-theme.outputs.package-hash }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}-${{ needs.build-default-theme.outputs.package-hash }}
       # Step to speed up project init
       - name: Cache node_modules
         uses: actions/cache@v2
@@ -369,10 +368,10 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}
       - name: Link packages
         run: |
-          yarn --frozen-lockfile
+          node ./scripts/linkDependencies.js
       # Step to speed up project init
       - name: Cache test-project
         uses: actions/cache@v2
@@ -384,16 +383,19 @@ jobs:
             !test-project/.shopware-pwa
             !test-project/.yalc
             !test-project/.yalc.lock
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}-${{ needs.build-cli.outputs.package-hash }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}-${{ needs.build-cli.outputs.package-hash }}
       - name: Create a project
         run: |
           mkdir -p test-project
           cd ./test-project
-          ../packages/cli/bin/shopware-pwa init --shopwareEndpoint=${{ env.CANARY_SW6_INSTANCE }} --shopwareAccessToken=${{ env.CANARY_SW6_INSTANCE_TOKEN }} --username=${{ secrets.SHOPWARE_ADMIN_USER }} --password=${{ secrets.SHOPWARE_ADMIN_PASSWORD }} --pwaHost=${{ env.PWA_HOST }} --ci --devMode --stage local
+          ../packages/cli/bin/shopware-pwa init --username=${{ secrets.SHOPWARE_ADMIN_USER }} --password=${{ secrets.SHOPWARE_ADMIN_PASSWORD }} --pwaHost=${{ env.PWA_HOST }} --ci --devMode --stage local
       - name: Build test project
         run: |
           cd ./test-project
           yarn build
+          cd ..
+          node ./scripts/yalcPushPackages.js
+          node ./scripts/yalcLinkTestProject.js
       - name: Build and publish docker image
         uses: elgohr/Publish-Docker-Github-Action@2.19
         if: github.repository_owner	== 'vuestorefront'

@@ -1,6 +1,6 @@
 <template>
   <SwAddress :address="shippingAddress" :address-title="$t('Shipping details')">
-    <template #before-content>
+    <template #before-content v-if="shippingMethod">
       <span class="content__label">{{ shippingMethod.name }}</span>
       <span class="content__label">{{ shippingMethod.deliveryTime.name }}</span>
       <SwPluginSlot
@@ -19,10 +19,10 @@
   </SwAddress>
 </template>
 <script>
-import SwButton from "@/components/atoms/SwButton"
+import SwButton from "@/components/atoms/SwButton.vue"
 import { useSessionContext, useCheckout } from "@shopware-pwa/composables"
-import SwAddress from "@/components/SwAddress"
-import SwPluginSlot from "sw-plugins/SwPluginSlot"
+import SwAddress from "@/components/SwAddress.vue"
+import SwPluginSlot from "sw-plugins/SwPluginSlot.vue"
 import { simplifyString } from "@/helpers"
 
 export default {
@@ -58,12 +58,12 @@ export default {
     }
   }
   &__title {
-    font-size: var(--font-sm);
+    font-size: var(--font-size--sm);
     margin-bottom: var(--spacer-sm);
     color: var(--c-text);
   }
   &__content {
-    font-size: var(--font-xs);
+    font-size: var(--font-size--xs);
   }
 }
 .content {

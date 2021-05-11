@@ -1,5 +1,5 @@
 import Vue from "vue";
-import VueCompositionApi from "@vue/composition-api";
+import VueCompositionApi, { Ref, ref } from "@vue/composition-api";
 Vue.use(VueCompositionApi);
 
 import { createListingComposable } from "../src/factories/createListingComposable";
@@ -12,13 +12,9 @@ describe("Composables - createListingComposable", () => {
   const rootContextMock = jest.fn();
   const searchMethodMock = jest.fn();
 
-  const vuexStoreMock = {
-    commit: jest.fn(),
-    getters: {
-      getAppliedListings: {},
-      getInitialListings: {},
-    },
-  };
+  const mockedInitialListing: Ref<any> = ref(null);
+  const mockedAppliedListing: Ref<any> = ref(null);
+
   let routerReplaceValue: any = null;
   let routerReplaceCatch: any = null;
   const routerMock = {
@@ -35,15 +31,23 @@ describe("Composables - createListingComposable", () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    vuexStoreMock.getters.getInitialListings = {};
-    vuexStoreMock.getters.getAppliedListings = {};
+    mockedInitialListing.value = null;
+    mockedAppliedListing.value = null;
     routerReplaceValue = null;
     routerMock.currentRoute.query = {};
     routerReplaceCatch = null;
     mockedComposables.getApplicationContext.mockImplementation(() => {
       return {
-        vuexStore: vuexStoreMock,
         router: routerMock,
+        contextName: "createListingComposable",
+      } as any;
+    });
+    mockedComposables.useSharedState.mockImplementation(() => {
+      return {
+        sharedRef: (key: string) => {
+          if (key.includes("initialListing")) return mockedInitialListing;
+          if (key.includes("appliedListing")) return mockedAppliedListing;
+        },
       } as any;
     });
   });
@@ -79,22 +83,17 @@ describe("Composables - createListingComposable", () => {
   });
 
   describe("getInitialListing", () => {
-    it("should return empty initialListing if key not found", () => {
-      vuexStoreMock.getters.getInitialListings = {
-        someOtherKey: { limit: 15 },
-      };
+    it("should return null if key not found", () => {
       const { getInitialListing } = createListingComposable({
         rootContext: rootContextMock as any,
         listingKey: "testKey",
         searchDefaults: null as any,
         searchMethod: searchMethodMock,
       });
-      expect(getInitialListing.value).toEqual({});
+      expect(getInitialListing.value).toBeNull();
     });
     it("should return initialListing from store", () => {
-      vuexStoreMock.getters.getInitialListings = {
-        testKey: { limit: 15 },
-      };
+      mockedInitialListing.value = { limit: 15 };
       const { getInitialListing } = createListingComposable({
         rootContext: rootContextMock as any,
         listingKey: "testKey",
@@ -106,7 +105,7 @@ describe("Composables - createListingComposable", () => {
   });
 
   describe("setInitialListing", () => {
-    it("should invoke store commit on invocation for initial and applied listing", async () => {
+    it("should change initial and applied listing", async () => {
       searchMethodMock.mockReturnValueOnce(() => {});
       const { setInitialListing } = createListingComposable({
         rootContext: rootContextMock as any,
@@ -115,14 +114,8 @@ describe("Composables - createListingComposable", () => {
         searchMethod: searchMethodMock,
       });
       await setInitialListing({ page: 5 });
-      expect(vuexStoreMock.commit).toBeCalledWith("SET_INITIAL_LISTING", {
-        listingKey: "testKey",
-        initialListing: { page: 5 },
-      });
-      expect(vuexStoreMock.commit).toBeCalledWith("SET_APPLIED_LISTING", {
-        listingKey: "testKey",
-        appliedListing: null,
-      });
+      expect(mockedInitialListing.value).toEqual({ page: 5 });
+      expect(mockedAppliedListing.value).toEqual(null);
     });
     it("should invoke set initial listing action with no aggregations if searchMethod's result is falsy", async () => {
       searchMethodMock.mockReturnValueOnce(undefined);
@@ -137,53 +130,14 @@ describe("Composables - createListingComposable", () => {
           manufacturer: {},
         },
       } as any);
-      expect(vuexStoreMock.commit).toBeCalledWith("SET_INITIAL_LISTING", {
-        listingKey: "testKey",
-        initialListing: {
-          aggregations: undefined,
-          currentFilters: {
-            manufacturer: {},
-          },
+      expect(mockedInitialListing.value).toEqual({
+        aggregations: undefined,
+        currentFilters: {
+          manufacturer: {},
         },
       });
     });
-    it("should invoke searchMethod for 2 times and store commit on invocation for initial and applied listing once currentFilters have applied filters", async () => {
-      searchMethodMock.mockReturnValue({
-        aggregations: "12345",
-      });
-      const { search } = createListingComposable({
-        rootContext: rootContextMock as any,
-        listingKey: "testKey",
-        searchDefaults: {
-          properties: "12221212122",
-        },
-        searchMethod: searchMethodMock,
-      });
-      await search({});
-      expect(searchMethodMock).toBeCalledTimes(2);
-      expect(vuexStoreMock.commit).toBeCalledWith("SET_APPLIED_LISTING", {
-        appliedListing: { aggregations: "12345" },
-        listingKey: "testKey",
-      });
-    });
-    it("should invoke searchMethod for 2 times and store commit on invocation for initial and applied listing once currentFilters have applied filters", async () => {
-      searchMethodMock.mockReturnValue(undefined);
-      const { search } = createListingComposable({
-        rootContext: rootContextMock as any,
-        listingKey: "testKey",
-        searchDefaults: {
-          properties: "12221212122",
-        },
-        searchMethod: searchMethodMock,
-      });
-      await search({});
-      expect(searchMethodMock).toBeCalledTimes(2);
-      expect(vuexStoreMock.commit).toBeCalledWith("SET_APPLIED_LISTING", {
-        appliedListing: { aggregations: undefined },
-        listingKey: "testKey",
-      });
-    });
-    it("should invoke searchMethod and store commit on invocation for initial and applied listing once currentFilters are not empty", async () => {
+    it("should invoke searchMethod and change shared listing on invocation for initial and applied listing once currentFilters are not empty", async () => {
       searchMethodMock.mockReturnValueOnce(() => {
         aggregations: {
         }
@@ -200,13 +154,10 @@ describe("Composables - createListingComposable", () => {
         },
       } as any);
       expect(searchMethodMock).toBeCalledWith({});
-      expect(vuexStoreMock.commit).toBeCalledWith("SET_INITIAL_LISTING", {
-        listingKey: "testKey",
-        initialListing: {
-          aggregations: undefined,
-          currentFilters: {
-            manufacturer: ["1234567"],
-          },
+      expect(mockedInitialListing.value).toEqual({
+        aggregations: undefined,
+        currentFilters: {
+          manufacturer: ["1234567"],
         },
       });
     });
@@ -214,9 +165,7 @@ describe("Composables - createListingComposable", () => {
 
   describe("getCurrentListing", () => {
     it("should return applied listing if exist", () => {
-      vuexStoreMock.getters.getAppliedListings = {
-        testKey: { limit: 15 },
-      };
+      mockedAppliedListing.value = { limit: 15 };
       const { getCurrentListing } = createListingComposable({
         rootContext: rootContextMock as any,
         listingKey: "testKey",
@@ -229,8 +178,8 @@ describe("Composables - createListingComposable", () => {
     });
 
     it("should return initial listing if there is no applied one", () => {
-      vuexStoreMock.getters.getInitialListings = {
-        testKey: { limit: 17 },
+      mockedInitialListing.value = {
+        limit: 17,
       };
       const { getCurrentListing } = createListingComposable({
         rootContext: rootContextMock as any,
@@ -256,8 +205,8 @@ describe("Composables - createListingComposable", () => {
     });
 
     it("should return elements from current listing", () => {
-      vuexStoreMock.getters.getInitialListings = {
-        testKey: { elements: [1, 2, 3] },
+      mockedInitialListing.value = {
+        elements: [1, 2, 3],
       };
       const { getElements } = createListingComposable({
         rootContext: rootContextMock as any,
@@ -281,8 +230,8 @@ describe("Composables - createListingComposable", () => {
     });
 
     it("should return total from current listing", () => {
-      vuexStoreMock.getters.getInitialListings = {
-        testKey: { total: 55 },
+      mockedInitialListing.value = {
+        total: 55,
       };
       const { getTotal } = createListingComposable({
         rootContext: rootContextMock as any,
@@ -318,8 +267,8 @@ describe("Composables - createListingComposable", () => {
     });
 
     it("should return limit from current listing", () => {
-      vuexStoreMock.getters.getInitialListings = {
-        testKey: { limit: 2 },
+      mockedInitialListing.value = {
+        limit: 2,
       };
       const { getLimit } = createListingComposable({
         rootContext: rootContextMock as any,
@@ -343,8 +292,8 @@ describe("Composables - createListingComposable", () => {
     });
 
     it("should return ceiled pages count from current listing", () => {
-      vuexStoreMock.getters.getInitialListings = {
-        testKey: { total: 55 },
+      mockedInitialListing.value = {
+        total: 55,
       };
       const { getTotalPagesCount } = createListingComposable({
         rootContext: rootContextMock as any,
@@ -368,8 +317,8 @@ describe("Composables - createListingComposable", () => {
     });
 
     it("should return availableSortings from currentListing", () => {
-      vuexStoreMock.getters.getInitialListings = {
-        testKey: { availableSortings: [1, 2] },
+      mockedInitialListing.value = {
+        availableSortings: [1, 2],
       };
       const { getSortingOrders } = createListingComposable({
         rootContext: rootContextMock as any,
@@ -381,8 +330,8 @@ describe("Composables - createListingComposable", () => {
     });
 
     it("should return olsSortings for shopware 6.3 configuration", () => {
-      vuexStoreMock.getters.getInitialListings = {
-        testKey: { sortings: { key1: 1, key2: 2 } },
+      mockedInitialListing.value = {
+        sortings: { key1: 1, key2: 2 },
       };
       const { getSortingOrders } = createListingComposable({
         rootContext: rootContextMock as any,
@@ -406,8 +355,8 @@ describe("Composables - createListingComposable", () => {
     });
 
     it("should return sorting order from current listing", () => {
-      vuexStoreMock.getters.getInitialListings = {
-        testKey: { sorting: "name-asc" },
+      mockedInitialListing.value = {
+        sorting: "name-asc",
       };
       const { getCurrentSortingOrder } = createListingComposable({
         rootContext: rootContextMock as any,
@@ -463,8 +412,8 @@ describe("Composables - createListingComposable", () => {
     });
 
     it("should return page number from current listing", () => {
-      vuexStoreMock.getters.getInitialListings = {
-        testKey: { page: 4 },
+      mockedInitialListing.value = {
+        page: 4,
       };
       const { getCurrentPage } = createListingComposable({
         rootContext: rootContextMock as any,
@@ -532,12 +481,10 @@ describe("Composables - createListingComposable", () => {
     });
 
     it("should return elements from current listing", () => {
-      vuexStoreMock.getters.getInitialListings = {
-        testKey: {
-          aggregations: {
-            myAggregation: {
-              someValue: 1,
-            },
+      mockedInitialListing.value = {
+        aggregations: {
+          myAggregation: {
+            someValue: 1,
           },
         },
       };
@@ -569,8 +516,8 @@ describe("Composables - createListingComposable", () => {
     });
 
     it("should return combined filters from current listing and router query", () => {
-      vuexStoreMock.getters.getInitialListings = {
-        testKey: { currentFilters: { limit: 6 } },
+      mockedInitialListing.value = {
+        currentFilters: { limit: 6 },
       };
       routerMock.currentRoute.query = {
         manufacturer: "nike",
@@ -716,10 +663,9 @@ describe("Composables - createListingComposable", () => {
         searchMethod: searchMethodMock,
       });
       await initSearch({ limit: 7 });
-      expect(vuexStoreMock.commit).toBeCalledTimes(2);
-      expect(vuexStoreMock.commit).toBeCalledWith("SET_INITIAL_LISTING", {
-        initialListing: { currentFilters: {}, limit: 77 },
-        listingKey: "testKey",
+      expect(mockedInitialListing.value).toEqual({
+        currentFilters: {},
+        limit: 77,
       });
     });
 
@@ -775,10 +721,7 @@ describe("Composables - createListingComposable", () => {
         searchMethod: searchMethodMock,
       });
       await search({ limit: 7 });
-      expect(vuexStoreMock.commit).toBeCalledWith("SET_APPLIED_LISTING", {
-        appliedListing: { limit: 77 },
-        listingKey: "testKey",
-      });
+      expect(mockedAppliedListing.value).toEqual({ limit: 77 });
     });
 
     it("should silently fail if router throws error", async () => {
@@ -884,9 +827,9 @@ describe("Composables - createListingComposable", () => {
         searchMethod: searchMethodMock,
       });
       await loadMore();
-      expect(vuexStoreMock.commit).toBeCalledWith("SET_APPLIED_LISTING", {
-        appliedListing: { page: 2, elements: [{ id: 1, name: "shoe" }] },
-        listingKey: "testKey",
+      expect(mockedAppliedListing.value).toEqual({
+        page: 2,
+        elements: [{ id: 1, name: "shoe" }],
       });
     });
 
@@ -923,8 +866,9 @@ describe("Composables - createListingComposable", () => {
     });
 
     it("should merge loadMore result elements and override page number", async () => {
-      vuexStoreMock.getters.getInitialListings = {
-        testKey: { page: 5, elements: [{ id: "333", name: "bag" }] },
+      mockedInitialListing.value = {
+        page: 5,
+        elements: [{ id: "333", name: "bag" }],
       };
       searchMethodMock.mockResolvedValueOnce({
         page: 7,
@@ -938,15 +882,12 @@ describe("Composables - createListingComposable", () => {
       });
       await loadMore();
       expect(searchMethodMock).toBeCalledWith({ p: 6 });
-      expect(vuexStoreMock.commit).toBeCalledWith("SET_APPLIED_LISTING", {
-        appliedListing: {
-          page: 7,
-          elements: [
-            { id: "333", name: "bag" },
-            { id: 1, name: "shoe" },
-          ],
-        },
-        listingKey: "testKey",
+      expect(mockedAppliedListing.value).toEqual({
+        page: 7,
+        elements: [
+          { id: "333", name: "bag" },
+          { id: 1, name: "shoe" },
+        ],
       });
     });
 
@@ -963,12 +904,9 @@ describe("Composables - createListingComposable", () => {
       });
       await loadMore();
       expect(searchMethodMock).toBeCalledWith({ p: 2 });
-      expect(vuexStoreMock.commit).toBeCalledWith("SET_APPLIED_LISTING", {
-        appliedListing: {
-          page: 7,
-          elements: [{ id: 1, name: "shoe" }],
-        },
-        listingKey: "testKey",
+      expect(mockedAppliedListing.value).toEqual({
+        page: 7,
+        elements: [{ id: 1, name: "shoe" }],
       });
     });
   });

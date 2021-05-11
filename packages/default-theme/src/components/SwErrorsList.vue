@@ -9,7 +9,7 @@
 </template>
 
 <script>
-import SwAlert from "@/components/atoms/SwAlert"
+import SwAlert from "@/components/atoms/SwAlert.vue"
 
 export default {
   name: "SwErrorsList",
@@ -29,7 +29,7 @@ export default {
 <style lang="scss" scoped>
 .errors-list-component {
   color: var(--_c-red-primary);
-  font-size: var(--font-sm);
+  font-size: var(--font-size--sm);
 
   .list {
     margin-top: var(--spacer-xs);

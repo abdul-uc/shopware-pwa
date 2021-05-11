@@ -9,8 +9,8 @@
 
 <script>
 import { SfTopBar } from "@storefront-ui/vue"
-import SwCurrencySwitcher from "@/components/SwCurrencySwitcher"
-import SwLanguageSwitcher from "@/components/SwLanguageSwitcher"
+import SwCurrencySwitcher from "@/components/SwCurrencySwitcher.vue"
+import SwLanguageSwitcher from "@/components/SwLanguageSwitcher.vue"
 
 export default {
   components: {
@@ -35,7 +35,7 @@ export default {
 
 .sw-top-bar {
   position: relative;
-  z-index: 3;
+  z-index: 1;
 
   &__location-label {
     margin: 0 var(--spacer-sm) 0 0;
@@ -47,19 +47,6 @@ export default {
       position: relative;
       margin: 0 var(--spacer-base) 0 var(--spacer-base);
       width: 2.5rem;
-      &::before {
-        content: "";
-        display: block;
-        position: absolute;
-        background-color: white;
-        width: 20px;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        border-radius: 50%;
-        padding: var(--spacer-2xs);
-        left: 50%;
-        height: 20px;
-      }
     }
     &__header {
       padding-left: var(--spacer-sm);

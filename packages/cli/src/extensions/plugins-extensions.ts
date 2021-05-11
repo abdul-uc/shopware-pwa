@@ -35,36 +35,40 @@ module.exports = (toolbox: GluegunToolbox) => {
   toolbox.fetchPluginsAuthToken = async (
     { shopwareEndpoint, username, password } = toolbox.inputParameters
   ) => {
+    const normalizedShopwareEndpoint = toolbox.normalizeBaseUrl(
+      shopwareEndpoint
+    );
     let authTokenResponse;
-    if (
-      !username &&
-      !password &&
-      shopwareEndpoint === toolbox.defaultInitConfig?.shopwareEndpoint
-    ) {
-      try {
-        authTokenResponse = await axios.post(
-          `${shopwareEndpoint}/api/oauth/token`,
-          {
-            grant_type: "client_credentials",
-            client_id: toolbox.defaultInitConfig.INSTANCE_READ_API_KEY,
-            client_secret: toolbox.defaultInitConfig.INSTANCE_READ_API_SECRET,
-          }
-        );
-      } catch (error) {
-        console.warn("error", error);
+    // Temporary turn off automatic credentials
+    // if (
+    //   !username &&
+    //   !password &&
+    //   normalizedShopwareEndpoint === toolbox.defaultInitConfig?.shopwareEndpoint
+    // ) {
+    //   try {
+    //     authTokenResponse = await axios.post(
+    //       `${normalizedShopwareEndpoint}/api/oauth/token`,
+    //       {
+    //         grant_type: "client_credentials",
+    //         client_id: toolbox.defaultInitConfig.INSTANCE_READ_API_KEY,
+    //         client_secret: toolbox.defaultInitConfig.INSTANCE_READ_API_SECRET,
+    //       }
+    //     );
+    //   } catch (error) {
+    //     console.warn("error", error);
+    //   }
+    // } else {
+    authTokenResponse = await axios.post(
+      `${normalizedShopwareEndpoint}/api/oauth/token`,
+      {
+        client_id: "administration",
+        grant_type: "password",
+        scopes: "write",
+        username,
+        password,
       }
-    } else {
-      authTokenResponse = await axios.post(
-        `${shopwareEndpoint}/api/oauth/token`,
-        {
-          client_id: "administration",
-          grant_type: "password",
-          scopes: "write",
-          username,
-          password,
-        }
-      );
-    }
+    );
+    // }
 
     return authTokenResponse?.data?.access_token;
   };
@@ -77,7 +81,9 @@ module.exports = (toolbox: GluegunToolbox) => {
     authToken: string;
   }) => {
     const pluginsConfigRsponse = await axios.post(
-      `${shopwareEndpoint}/api/v3/_action/pwa/dump-bundles`,
+      `${toolbox.normalizeBaseUrl(
+        shopwareEndpoint
+      )}/api/v3/_action/pwa/dump-bundles`,
       null,
       {
         headers: {
@@ -89,21 +95,29 @@ module.exports = (toolbox: GluegunToolbox) => {
   };
 
   toolbox.fetchPluginsConfig = async ({ config }: { config: string }) => {
-    const endpoint = toolbox.inputParameters.shopwareEndpoint;
+    const endpoint = toolbox.normalizeBaseUrl(
+      toolbox.inputParameters.shopwareEndpoint
+    );
     const url =
       config.indexOf(endpoint) >= 0
         ? config
-        : `${toolbox.inputParameters.shopwareEndpoint}/${config}`;
+        : `${toolbox.normalizeBaseUrl(
+            toolbox.inputParameters.shopwareEndpoint
+          )}/${config}`;
     const pluginsConfigResponse = await axios.get(url);
     return pluginsConfigResponse.data;
   };
 
   toolbox.loadPluginsAssetFile = async ({ asset }: { asset: string }) => {
-    const endpoint = toolbox.inputParameters.shopwareEndpoint;
+    const endpoint = toolbox.normalizeBaseUrl(
+      toolbox.inputParameters.shopwareEndpoint
+    );
     const fileUrl =
       asset.indexOf(endpoint) >= 0
         ? asset
-        : `${toolbox.inputParameters.shopwareEndpoint}/${asset}`;
+        : `${toolbox.normalizeBaseUrl(
+            toolbox.inputParameters.shopwareEndpoint
+          )}/${asset}`;
 
     const request = require("request");
     const loadFile = function () {
@@ -137,6 +151,13 @@ module.exports = (toolbox: GluegunToolbox) => {
     });
   };
 
+  interface PluginConfig {
+    slots: Array<{ name: string; file: string }>;
+    layouts: Array<{ name: string; file: string }>;
+    pages: Array<{ path: string; file: string }>;
+    settings: unknown;
+  }
+
   toolbox.buildPluginsTrace = async ({
     pluginsConfig,
     rootDirectory,
@@ -147,17 +168,19 @@ module.exports = (toolbox: GluegunToolbox) => {
     const pluginsMap = Object.assign({}, pluginsTrace);
     if (pluginsConfig) {
       const pluginNames = Object.keys(pluginsConfig);
+      await toolbox.filesystem.removeAsync(".shopware-pwa/sw-plugins/pages");
+      await toolbox.filesystem.removeAsync(".shopware-pwa/sw-plugins/layouts");
       pluginNames.forEach((pluginName) => {
         if (!pluginsConfig[pluginName]) return;
         const pluginDirectory = `${pluginsRootDirectory}/${pluginName}`;
         const pluginDirExist = toolbox.filesystem.exists(pluginDirectory);
         if (pluginDirExist) {
-          const pluginConfig = toolbox.filesystem.read(
+          const pluginConfig: PluginConfig = toolbox.filesystem.read(
             `${pluginDirectory}/config.json`,
             "json"
           );
           if (pluginConfig) {
-            pluginConfig.slots.forEach(
+            pluginConfig?.slots?.forEach(
               async (slot: { name: string; file: string }) => {
                 if (!pluginsMap[slot.name]) pluginsMap[slot.name] = [];
                 pluginsMap[slot.name].push(
@@ -165,6 +188,67 @@ module.exports = (toolbox: GluegunToolbox) => {
                 );
               }
             );
+            // Custom layouts
+            if (pluginConfig?.layouts?.length) {
+              pluginConfig.layouts.forEach(async (layoutConfig) => {
+                const slotName = `sw-layouts-${layoutConfig.name}`;
+                if (!pluginsMap[slotName]) pluginsMap[slotName] = [];
+                pluginsMap[slotName].push(
+                  `~~/${pluginDirectory}/${layoutConfig.file}`
+                );
+                const runtimeLayoutExist = toolbox.filesystem.exists(
+                  `.shopware-pwa/source/layouts/${layoutConfig.name}.vue`
+                );
+                if (!runtimeLayoutExist) {
+                  await toolbox.template.generate({
+                    template: `/plugins/PluginSlotTemplate.vue`,
+                    target: `.shopware-pwa/source/layouts/${layoutConfig.name}.vue`,
+                    props: {
+                      slotName,
+                    },
+                  });
+                }
+                await toolbox.template.generate({
+                  template: `/plugins/PluginSlotTemplate.vue`,
+                  target: `.shopware-pwa/sw-plugins/layouts/${layoutConfig.name}.vue`,
+                  props: {
+                    slotName,
+                  },
+                });
+              });
+            }
+            // Custom pages
+            if (pluginConfig?.pages?.length) {
+              pluginConfig.pages.forEach(async (pageConfig) => {
+                const { file, path, ...params } = pageConfig;
+                const slotName = `sw-pages-${pageConfig.path}`;
+                if (!pluginsMap[slotName]) pluginsMap[slotName] = [];
+                pluginsMap[slotName].push(
+                  `~~/${pluginDirectory}/${pageConfig.file}`
+                );
+                const runtimePageExist = toolbox.filesystem.exists(
+                  `.shopware-pwa/source/pages/${pageConfig.path}.vue`
+                );
+                if (!runtimePageExist) {
+                  await toolbox.template.generate({
+                    template: `/plugins/PluginSlotTemplate.vue`,
+                    target: `.shopware-pwa/source/pages/${pageConfig.path}.vue`,
+                    props: {
+                      slotName,
+                      params,
+                    },
+                  });
+                }
+                await toolbox.template.generate({
+                  template: `/plugins/PluginSlotTemplate.vue`,
+                  target: `.shopware-pwa/sw-plugins/pages/${pageConfig.path}.vue`,
+                  props: {
+                    slotName,
+                    params,
+                  },
+                });
+              });
+            }
           } else {
             toolbox.print.error(`Plugin ${pluginName} has no config file!`);
           }
@@ -271,12 +355,13 @@ module.exports = (toolbox: GluegunToolbox) => {
       await toolbox.loadPluginsAssetFile(buildArtifact);
       await toolbox.unzipPluginsAssetsFile();
     } catch (e) {
-      if (e?.response?.status === 401) {
+      if (e?.response?.status === 401 || e?.response?.status === 403) {
         toolbox.print.error(
           `You provided bad cridentials for your shopware instance: ${toolbox.inputParameters.shopwareEndpoint} - plugins will not be added`
         );
       } else {
         toolbox.print.error(`UNEXPECTED ERROR ${e?.response ? e.response : e}`);
+        console.error(e);
       }
       return;
     }

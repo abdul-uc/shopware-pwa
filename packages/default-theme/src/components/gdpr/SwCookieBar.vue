@@ -15,8 +15,9 @@
 
 <script>
 import { SfTopBar } from "@storefront-ui/vue"
-import SwButton from "@/components/atoms/SwButton"
-const SwCookieBarContent = () => import("@/components/gdpr/SwCookieBarContent")
+import SwButton from "@/components/atoms/SwButton.vue"
+const SwCookieBarContent = () =>
+  import("@/components/gdpr/SwCookieBarContent.vue")
 
 export default {
   name: "SwCookieBar",
@@ -31,10 +32,12 @@ export default {
     }
   },
   mounted() {
-    const res = localStorage.getItem("gdpr-cookie-notification-accepted")
-    if (res !== "true") {
-      this.displayCookieBar = true
-    }
+    setTimeout(() => {
+      const res = localStorage.getItem("gdpr-cookie-notification-accepted")
+      if (res !== "true") {
+        this.displayCookieBar = true
+      }
+    }, 5000)
   },
 
   methods: {

@@ -22,9 +22,9 @@ import {
   useCms,
   useCategoryFilters,
   getApplicationContext,
+  useDefaults,
 } from "@shopware-pwa/composables";
 import { ApplicationVueContext } from "../appContext";
-import { useDefaults } from "../logic/useDefaults";
 
 import {
   toggleEntityFilter,
@@ -68,7 +68,7 @@ const selectedCriteria = Vue.observable({
  */
 export const useProductListing = (
   rootContext: ApplicationVueContext,
-  initialListing?: ProductListingResult
+  initialListing?: Partial<ProductListingResult>
 ): UseProductListing => {
   deprecationWarning({
     methodName: "useProductListing",
@@ -92,14 +92,6 @@ export const useProductListing = (
   const localCriteria = reactive(selectedCriteria);
   const localPagination = reactive(sharedPagination);
   const productListingResult: Ref<ProductListingResult | null> = ref(null);
-
-  // check whether the search result has some filters applied
-  /* istanbul ignore next */
-  const isBaseRequest = () =>
-    productListingResult.value?.currentFilters?.rating === null &&
-    productListingResult.value?.currentFilters["shipping-free"] === null &&
-    !productListingResult.value?.currentFilters?.manufacturer?.length &&
-    !productListingResult.value?.currentFilters?.properties?.length;
 
   if (initialListing?.elements && initialListing.elements.length) {
     sharedListing.products = initialListing.elements;
@@ -189,6 +181,12 @@ export const useProductListing = (
     if (typeof history !== "undefined")
       history.replaceState({}, null as any, location.pathname + "?" + search);
 
+    if (!categoryId.value) {
+      throw new Error(
+        "[useProductListing][search] Search category id does not exist."
+      );
+    }
+
     productListingResult.value = await getCategoryProductsListing(
       categoryId.value,
       searchCriteria,
@@ -198,22 +196,9 @@ export const useProductListing = (
       (productListingResult.value && productListingResult.value.total) || 0;
     sharedListing.products = productListingResult.value?.elements || [];
 
-    // base response has always all the aggregations
-    if (isBaseRequest()) {
-      sharedListing.availableFilters = getListingAvailableFilters(
-        productListingResult.value.aggregations
-      );
-    } else {
-      // get the aggregations without narrowing down the results, so another api call is needed (using post-aggregation may fix it)
-      const productListingBaseResult = await getCategoryProductsListing(
-        categoryId.value,
-        { pagination: { limit: 1 } },
-        apiInstance
-      );
-      sharedListing.availableFilters = getListingAvailableFilters(
-        productListingBaseResult.aggregations
-      );
-    }
+    sharedListing.availableFilters = getListingAvailableFilters(
+      productListingResult.value.aggregations
+    );
 
     initialListing = undefined;
     loading.value = false;

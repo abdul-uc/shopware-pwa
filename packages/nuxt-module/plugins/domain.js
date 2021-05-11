@@ -1,16 +1,16 @@
 import Middleware from "./middleware";
-import VueCompositionAPI, { computed, ref } from "@vue/composition-api";
-import { useSessionContext } from "@shopware-pwa/composables";
-import Vue from "vue";
+import { computed } from "@vue/composition-api";
+import { useSessionContext, useSharedState } from "@shopware-pwa/composables";
 const FALLBACK_DOMAIN = "<%= options.fallbackDomain %>" || "/";
 const FALLBACK_LOCALE = "<%= options.fallbackLocale %>";
 const PWA_HOST = "<%= options.pwaHost %>";
 const domainsList = require("sw-plugins/domains");
-Vue.use(VueCompositionAPI);
 
-const currentDomainData = ref();
 // register domains based routing and configuration
 export default ({ app, route }, inject) => {
+  const { sharedRef } = useSharedState(app);
+  const currentDomainData = sharedRef("sw-current-domain");
+
   const routeDomainUrl = computed(() => route.meta?.[0]?.url);
   const routeDomain = computed(() =>
     Object.values(domainsList).find(
@@ -74,10 +74,16 @@ Middleware.routing = function ({ isHMR, app, store, from, route, redirect }) {
     return redirect(`${fallbackDomainPrefix}${route.path}`);
   }
 
+  if (!domainConfig) {
+    return;
+  }
+
   // set default currency for the current domain
   const { setCurrency, currency } = useSessionContext(app);
   let currencyId =
-    route.query.currencyId || (currency.value && currency.value.id);
+    route.query.currencyId ||
+    (currency.value && currency.value.id) ||
+    domainConfig.currencyId;
   // force change the currencyId to default one for changed domain
   const fromDomain =
     from &&
@@ -87,13 +93,9 @@ Middleware.routing = function ({ isHMR, app, store, from, route, redirect }) {
     currencyId = domainConfig.currencyId;
   }
 
-  if (!domainConfig) {
-    return;
-  }
-  setCurrency({ id: currencyId });
+  currencyId && setCurrency({ id: currencyId });
   const { languageId, languageLocaleCode } = domainConfig;
   app.routing.setCurrentDomain(domainConfig);
   languageId && app.$shopwareApiInstance.update({ languageId });
-  languageLocaleCode && store.commit("SET_LANG", languageLocaleCode);
   app.i18n.locale = languageLocaleCode;
 };

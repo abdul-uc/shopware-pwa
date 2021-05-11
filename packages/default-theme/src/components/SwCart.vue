@@ -40,7 +40,7 @@
               :title="$t('Your cart is empty')"
               :level="2"
               class="empty-cart__heading"
-              :subtitle="$t('No items in cart')"
+              :description="$t('No items in cart')"
             />
           </div>
         </div>
@@ -91,10 +91,10 @@ import {
   getApplicationContext,
 } from "@shopware-pwa/composables"
 import { getProducts } from "@shopware-pwa/shopware-6-client"
-import SwCartProduct from "@/components/SwCartProduct"
-import SwButton from "@/components/atoms/SwButton"
+import SwCartProduct from "@/components/SwCartProduct.vue"
+import SwButton from "@/components/atoms/SwButton.vue"
 import { PAGE_CHECKOUT } from "@/helpers/pages"
-import SwPluginSlot from "sw-plugins/SwPluginSlot"
+import SwPluginSlot from "sw-plugins/SwPluginSlot.vue"
 import { computed, onMounted, ref, watch } from "@vue/composition-api"
 
 export default {
@@ -127,7 +127,6 @@ export default {
       if (!cartItems.value.length || newItems.length <= oldItems.length) {
         return
       }
-      apiInstance.defaults.headers["sw-include-seo-urls"] = true
       try {
         const result = await getProducts(
           {
@@ -201,8 +200,8 @@ export default {
 
 .sw-side-cart {
   --sidebar-z-index: 1;
-  --property-name-font-size: var(--font-lg);
-  --property-value-font-size: var(--font-lg);
+  --property-name-font-size: var(--font-size--lg);
+  --property-value-font-size: var(--font-size--lg);
   --sidebar-bottom: var(--bottom-navigation-height, 0);
   --overlay-z-index: 0;
   --sidebar-bottom-padding: var(--spacer-sm) var(--spacer-sm) var(--spacer-xl);
@@ -227,14 +226,17 @@ export default {
   display: flex;
   flex-direction: column;
   &__total-items {
+    display: none;
     margin: var(--spacer-xs) 0;
     @include for-desktop {
+      display: block;
       margin: var(--spacer-xl) 0 var(--spacer-lg) 0;
+      --property-name-font-weight: var(--font-weight--medium);
     }
   }
   &__total-price {
-    --price-font-size: var(--font-xl);
-    --price-font-weight: var(--font-semibold);
+    --price-font-size: var(--font-size--xl);
+    --price-font-weight: var(--font-weight--semibold);
     margin: 0 0 var(--spacer-base) 0;
   }
 }
@@ -242,10 +244,10 @@ export default {
   flex: 1;
 }
 .empty-cart {
-  --heading-subtitle-margin: 0 0 var(--spacer-xl) 0;
-  --heading-title-margin: 0 0 var(--spacer-base) 0;
+  --heading-description-margin: 0 0 var(--spacer-xl) 0;
+  --heading-title-margin: var(--spacer-base) 0;
   --heading-title-color: var(--c-primary);
-  --heading-title-font-weight: var(--font-semibold);
+  --heading-title-font-weight: var(--font-weight--semibold);
   display: flex;
   flex: 1;
   align-items: center;

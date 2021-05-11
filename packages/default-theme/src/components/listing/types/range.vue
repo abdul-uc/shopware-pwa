@@ -1,9 +1,9 @@
 <template>
   <div>
-    <SfHeading class="filters__title" :level="4" :title="filter.label" />
+    <SfHeading class="filters__title" :level="4" :title="$t(filter.label)" />
     <div class="filter__range">
       <SwInput
-        label="Min"
+        :label="$t('Min')"
         name="min"
         class="filter__range-min"
         type="number"
@@ -25,9 +25,9 @@
 import { computed, ref } from "@vue/composition-api"
 
 import { SfFilter, SfHeading } from "@storefront-ui/vue"
-import SwInput from "@/components/atoms/SwInput"
-import { validationMixin } from "vuelidate"
-import { required, email } from "vuelidate/lib/validators"
+import SwInput from "@/components/atoms/SwInput.vue"
+import useVuelidate from "@vuelidate/core"
+import { required, email } from "@vuelidate/validators"
 
 export default {
   components: {
@@ -35,7 +35,6 @@ export default {
     SwInput,
     SfHeading,
   },
-  mixins: [validationMixin],
   props: {
     filter: {
       type: Object,
@@ -78,6 +77,7 @@ export default {
       max,
       minChanged,
       maxChanged,
+      $v: useVuelidate(),
     }
   },
 }

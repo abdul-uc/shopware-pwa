@@ -17,13 +17,13 @@
         :label="$t('Salutation')"
         :valid="!$v.salutation.$error"
         :error-message="$t('Salutation must be selected')"
-        class="sf-select--underlined sw-form__input sw-form__select form__element"
+        class="sf-select--underlined sw-form__input form__element select"
         data-cy="salutation-select"
       >
         <SfSelectOption
           v-for="salutationOption in getMappedSalutations"
           :key="salutationOption.id"
-          :value="salutationOption"
+          :value="salutationOption.id"
           data-cy="salutation-option"
         >
           {{ salutationOption.name }}
@@ -108,7 +108,7 @@
         v-if="getMappedCountries && getMappedCountries.length > 0"
         v-model="country"
         :label="$t('Country')"
-        class="sf-select--underlined sw-form__input form__element"
+        class="sf-select--underlined sw-form__input form__element select"
         :valid="!$v.country.$error"
         :error-message="$t('Country must be selected')"
         data-cy="country-select"
@@ -117,7 +117,7 @@
         <SfSelectOption
           v-for="countryOption in getMappedCountries"
           :key="countryOption.id"
-          :value="countryOption"
+          :value="countryOption.id"
           data-cy="country-option"
         >
           {{ countryOption.name }}
@@ -138,26 +138,26 @@
 <script>
 import { computed } from "@vue/composition-api"
 import { SfAlert, SfSelect } from "@storefront-ui/vue"
-import { validationMixin } from "vuelidate"
-import { required, email, minLength } from "vuelidate/lib/validators"
+import useVuelidate from "@vuelidate/core"
+import { required, email, minLength } from "@vuelidate/validators"
 import {
   useUser,
   useCountries,
   useSalutations,
+  useSessionContext,
 } from "@shopware-pwa/composables"
 import {
   mapCountries,
   mapSalutations,
   getMessagesFromErrorsArray,
 } from "@shopware-pwa/helpers"
-import SwPluginSlot from "sw-plugins/SwPluginSlot"
-import SwButton from "@/components/atoms/SwButton"
-import SwInput from "@/components/atoms/SwInput"
+import SwPluginSlot from "sw-plugins/SwPluginSlot.vue"
+import SwButton from "@/components/atoms/SwButton.vue"
+import SwInput from "@/components/atoms/SwInput.vue"
 
 export default {
   name: "SwResetPassword",
   components: { SwButton, SwInput, SfAlert, SfSelect, SwPluginSlot },
-  mixins: [validationMixin],
   data() {
     return {
       firstName: "",
@@ -172,6 +172,7 @@ export default {
     }
   },
   setup(props, { root }) {
+    const { refreshSessionContext } = useSessionContext(root)
     const { login, register, loading, error: userError } = useUser(root)
     const { getCountries, error: countriesError } = useCountries(root)
     const { getSalutations, error: salutationsError } = useSalutations(root)
@@ -193,6 +194,8 @@ export default {
       salutationsError,
       getMappedSalutations,
       userErrorMessages,
+      refreshSessionContext,
+      $v: useVuelidate(),
     }
   },
   computed: {
@@ -202,19 +205,19 @@ export default {
         lastName: this.lastName,
         email: this.email,
         password: this.password,
-        salutationId: this.salutation.id,
+        salutationId: this.salutation,
         storefrontUrl:
           window &&
           window.location &&
           `${window.location.protocol}//${window.location.hostname}`,
         billingAddress: {
           firstName: this.firstName,
-          salutationId: this.salutation.id,
+          salutationId: this.salutation,
           lastName: this.lastName,
           city: this.city,
           street: this.street,
           zipcode: this.zipcode,
-          countryId: this.country.id,
+          countryId: this.country,
         },
       }
     },
@@ -264,6 +267,7 @@ export default {
           username: this.email,
           password: this.password,
         })
+        this.refreshSessionContext()
         this.$emit("success")
       }
     },
@@ -302,6 +306,13 @@ export default {
   }
   &--second {
     padding: 4rem;
+  }
+}
+.select {
+  ::v-deep .sf-select__dropdown {
+    font-size: var(--font-size--lg);
+    font-family: var(--font-family--secondary);
+    color: var(--c-text);
   }
 }
 </style>

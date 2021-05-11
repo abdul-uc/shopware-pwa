@@ -42,7 +42,7 @@
               size="21px"
               view-box="0 0 24 12"
             />
-            ({{ category.count }})
+            ({{ category.children.length }})
           </div>
         </SfListItem>
       </SfList>
@@ -74,12 +74,12 @@ export default {
       root,
       "CART_SIDEBAR_STATE"
     )
-    const { fetchNavigationElements, navigationElements } = useNavigation(root)
+    const { loadNavigationElements, navigationElements } = useNavigation(root)
     const { switchState: toggleModal } = useUIState(root, "LOGIN_MODAL_STATE")
 
     onMounted(async () => {
       try {
-        await fetchNavigationElements(3)
+        await loadNavigationElements({ depth: 3 })
       } catch (e) {
         console.error("[SwBottomMenu]", e)
       }
@@ -192,11 +192,11 @@ export default {
       width: 100%;
 
       .name {
-        font-weight: bolder;
+        font-weight: var(--font-weight--semibold);
       }
 
       .icon {
-        font-weight: bolder;
+        font-weight: var(--font-weight--semibold);
         left: 0;
         position: absolute;
         top: 50%;

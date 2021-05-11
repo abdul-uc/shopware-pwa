@@ -26,8 +26,8 @@
 </template>
 
 <script>
-import SwPluginSlot from "sw-plugins/SwPluginSlot"
-import SwFooterNavigation from "@/components/organisms/SwFooterNavigation"
+import SwPluginSlot from "sw-plugins/SwPluginSlot.vue"
+import SwFooterNavigation from "@/components/organisms/SwFooterNavigation.vue"
 
 export default {
   name: "SwFooter",
@@ -81,8 +81,8 @@ export default {
   }
 
   &__bottom-navigation {
+    border-top: var(--c-primary) solid 4px;
     margin-bottom: var(--spacer-sm);
-    width: 100%;
   }
 }
 </style>

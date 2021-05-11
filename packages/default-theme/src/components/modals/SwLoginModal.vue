@@ -44,7 +44,7 @@
               {{ $t("or try to log in again.") }}
             </SwButton>
           </div>
-          <div class="mobile-only bottom bottom__close">
+          <div class="smartphone-only bottom bottom__close">
             <SwButton
               class="sf-button sf-select__cancel sf-button--full-width close-button"
               @click="toggleModal()"
@@ -62,10 +62,10 @@
 <script>
 import { SfHeading, SfModal, SfAlert } from "@storefront-ui/vue"
 import { useUser, useUIState } from "@shopware-pwa/composables"
-import SwLogin from "@/components/SwLogin"
-import SwButton from "@/components/atoms/SwButton"
-const SwRegister = () => import("@/components/SwRegister")
-const SwResetPassword = () => import("@/components/SwResetPassword")
+import SwButton from "@/components/atoms/SwButton.vue"
+const SwLogin = () => import("@/components/SwLogin.vue")
+const SwRegister = () => import("@/components/SwRegister.vue")
+const SwResetPassword = () => import("@/components/SwResetPassword.vue")
 
 export default {
   name: "SwLoginModal",
@@ -103,7 +103,7 @@ export default {
   data() {
     return {
       key: "modal-opened",
-      component: "SwLogin",
+      component: "",
     }
   },
   computed: {
