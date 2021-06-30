@@ -33,7 +33,8 @@ export async function getSuggestedResults(
         apiType: ApiType.store,
         config: contextInstance.config,
       }),
-    }
+    },
+    { timeout: 300000 }
   );
 
   return resp.data;
@@ -70,7 +71,8 @@ export async function getSearchResults(
     `${getSearchEndpoint()}?search=${term}`,
     {
       ...convertShopwareSearchCriteria(searchCriteria),
-    }
+    },
+    { timeout: 300000 }
   );
 
   return resp.data;
@@ -88,7 +90,8 @@ export async function searchProducts(
 ): Promise<ProductListingResult> {
   const resp = await contextInstance.invoke.post(
     `${getSearchEndpoint()}?search=${criteria?.query || ""}`,
-    criteria
+    criteria,
+    { timeout: 300000 }
   );
 
   return resp.data;
@@ -106,7 +109,8 @@ export async function searchSuggestedProducts(
 ): Promise<ProductListingResult> {
   const resp = await contextInstance.invoke.post(
     `${getSuggestSearchEndpoint()}?search=${criteria?.query || ""}`,
-    criteria
+    criteria,
+    { timeout: 300000 }
   );
 
   return resp.data;

@@ -11,12 +11,11 @@ import * as idxdb from "idb"; // Type hinting idb.d.ts
 import { IDBPDatabase, openDB } from "idb";
 import { indexDB } from "../indexDB";
 import { getPageResolverEndpoint } from "../endpoints";
-import {
-  ShopwareSearchParams,
-} from "@shopware-pwa/commons/interfaces/search/SearchCriteria";
+import { ShopwareSearchParams } from "@shopware-pwa/commons/interfaces/search/SearchCriteria";
 import { getDefaultApiParams } from "@shopware-pwa/composables";
-import { stringify } from 'zipson';
-import { parse } from 'zipson';
+import { stringify } from "zipson";
+import { parse } from "zipson";
+import { getProductThumbnailUrl } from "@shopware-pwa/helpers";
 
 // import { exportToJson } from '../idb-backup-and-restore.mjs';
 /**
@@ -73,7 +72,7 @@ export interface Detail {
 export interface Path {
   path: any[];
 }
-export function get_path(children: any, path_array: Path) {
+export function get_path_old(children: any, path_array: Path) {
   const path = children.route.path;
   // console.log("path", path);
   path_array.path.push(path);
@@ -91,26 +90,39 @@ export function get_path(children: any, path_array: Path) {
   //console.log("Path Array:", path_array);
 }
 
+export function get_path(children: any, path_array: Path) {
+  if (children?.length > 0) {
+    for (let child of children) {
+      const path = child.seoUrls[0]?.seoPathInfo;
+      // console.log("path", path);
+      path_array.path.push(path);
+      if (child.children?.length > 0) {
+        get_path(child.children, path_array);
+      }
+    }
+  }
+  //console.log("Path Array:", path_array);
+}
 export async function saveProducts_OLD(
   response: NavigationResponse,
   contextInstance: ShopwareApiInstance = defaultInstance
 ): Promise<void> {
-
   console.log("Inside Save Products", response);
-  const db = await openDB<MyDB>('my-db-1', 1, {
+  const db = await openDB<MyDB>("my-db-1", 1, {
     upgrade(db) {
-      db.createObjectStore('favourite-number');
+      db.createObjectStore("favourite-number");
 
-      const productStore = db.createObjectStore('products', {
-        keyPath: 'id', autoIncrement: true
+      const productStore = db.createObjectStore("products", {
+        keyPath: "id",
+        autoIncrement: true,
       });
-      productStore.createIndex('by-price', 'price');
-      productStore.createIndex('by-path', 'path', { multiEntry: true });
-      productStore.createIndex('by-detail-path', 'detail_path');
+      productStore.createIndex("by-price", "price");
+      productStore.createIndex("by-path", "path", { multiEntry: true });
+      productStore.createIndex("by-detail-path", "detail_path");
     },
   });
   let params: ShopwareSearchParams = {
-    limit: 500
+    limit: 500,
   };
   console.log("Response Children:", response.children);
   let path_array = {} as Path;
@@ -125,7 +137,6 @@ export async function saveProducts_OLD(
   console.log("Unique Path Array:", unique);
   await db.put("favourite-number", unique, "unique-path-array");
 
-
   let array_elements_media = [];
   let array_detail_view = [];
   let count = 0;
@@ -133,86 +144,127 @@ export async function saveProducts_OLD(
   for (let path of unique) {
     console.log("PATH:", path);
 
-    const all_products = await contextInstance.invoke.post(getPageResolverEndpoint(), {
-      path: path.toString(),
-      ...params,
-    }, { timeout: 300000 });
+    const all_products = await contextInstance.invoke.post(
+      getPageResolverEndpoint(),
+      {
+        path: path.toString(),
+        ...params,
+      },
+      { timeout: 300000 }
+    );
 
-    const val = await db.get("favourite-number", 'page_response_place_holder') || 0;
+    const val =
+      (await db.get("favourite-number", "page_response_place_holder")) || 0;
     console.log("val", val);
     if (val == 0) {
       const response_place_holder = all_products.data;
       //response_place_holder.cmsPage.sections[0].blocks[2].slots[0].data.listing.elements = [];
-      await db.put("favourite-number", response_place_holder, "page_response_place_holder");
+      await db.put(
+        "favourite-number",
+        response_place_holder,
+        "page_response_place_holder"
+      );
     }
-    let elements = all_products.data.cmsPage.sections[0].blocks[2].slots[0].data.listing.elements;
+    let elements =
+      all_products?.data?.cmsPage?.sections[0]?.blocks[2]?.slots[0]?.data
+        ?.listing?.elements;
 
     let detail_params: ShopwareSearchParams = {
-      limit: 10
+      limit: 10,
     };
 
     let detail_params_default = getDefaultApiParams();
     console.log("DETAIL PARAMS DEFAULT: ", detail_params_default);
-    for (let element of elements) {
-      console.log(element); // 1, "string", false
-      if (element.translated.customFields.migration_BerndWolf_product_attr13 && element.translated.customFields.migration_BerndWolf_product_attr13.startsWith("K")) {
-        //console.log("Offline Elemeent - begin:", element);
-        if (element.cover && element.cover.media) {
-          array_elements_media.push(element.cover.media.url);
-          for (let thumbnail of element.cover.media.thumbnails) {
-            thumbnail.url = element.cover.media.url;
-            //  array_elements_media.push(thumbnail.url);
+    if (elements) {
+      for (let element of elements) {
+        console.log(element); // 1, "string", false
+        if (
+          element.translated.customFields.migration_BerndWolf_product_attr13 &&
+          element.translated.customFields.migration_BerndWolf_product_attr13.startsWith(
+            "K"
+          )
+        ) {
+          //console.log("Offline Elemeent - begin:", element);
+          if (element.cover && element.cover.media) {
+            // array_elements_media.push(element.cover.media.url);
+            array_elements_media.push(getProductThumbnailUrl(element));
+            /* for (let thumbnail of element.cover.media.thumbnails) {
+              thumbnail.url = element.cover.media.url;
+              //  array_elements_media.push(thumbnail.url);
+            } */
+            const val = (await db.get("products", element.id)) || 0;
+            console.log("product_exist", val);
+            let commentData = {} as Detail;
+            commentData.handler = "CacheFirst";
+            commentData.method = "GET";
+            let detail_path = "";
+            if (element.seoUrls && element.seoUrls.length > 0) {
+              commentData.urlPattern =
+                process.env.HOST +
+                ":" +
+                process.env.PORT +
+                "/" +
+                element.seoUrls[0].seoPathInfo;
+              array_detail_view.push(
+                "http://localhost:3000/" + element.seoUrls[0].seoPathInfo
+              );
+              detail_path = element.seoUrls[0].seoPathInfo;
+            } else {
+              commentData.urlPattern =
+                process.env.HOST +
+                ":" +
+                process.env.PORT +
+                "/detail/" +
+                element.id;
+              array_detail_view.push(
+                "http://localhost:3000/detail/" + element.id
+              );
+              detail_path = "detail/" + element.id;
+            }
+            if (val == 0) {
+              const resp = await contextInstance.invoke.post(
+                getPageResolverEndpoint(),
+                {
+                  path: detail_path,
+                  ...detail_params_default.useCms,
+                },
+                { timeout: 300000 }
+              );
+              console.log("Product Page Response:", resp.data);
+              let detail_page = resp.data;
+              //console.log("Offline Elemeent end:", element);
+              const result = await db.put("products", {
+                id: element.id,
+                path: path.split(","),
+                name: element.translated?.name,
+                detail_path: detail_path,
+                detail_page: detail_page,
+                price: element.calculatedPrices[0]?.unitPrice,
+                productCode:
+                  element.translated?.customFields
+                    ?.migration_BerndWolf_product_attr13,
+                element: element,
+              });
+              //console.log('Put Data: ', JSON.stringify(result));
+              count += 1;
+            } else {
+              let new_path = val.path;
+              new_path.push(path);
+              const result = await db.put("products", {
+                id: element.id,
+                path: new_path,
+                detail_path: detail_path,
+                detail_page: val.detail_page,
+                name: element.translated?.name,
+                price: element.calculatedPrices[0]?.unitPrice,
+                productCode:
+                  element.translated?.customFields
+                    ?.migration_BerndWolf_product_attr13,
+                element: element,
+              });
+            }
+            // array_detail_view.push(commentData);
           }
-          const val = await db.get('products', element.id) || 0;
-          console.log("product_exist", val);
-          let commentData = {} as Detail;
-          commentData.handler = "CacheFirst";
-          commentData.method = 'GET';
-          let detail_path = "";
-          if (element.seoUrls && element.seoUrls.length > 0) {
-            commentData.urlPattern = process.env.HOST + ":" + process.env.PORT + "/" + element.seoUrls[0].seoPathInfo;
-            array_detail_view.push("http://localhost:3000/" + element.seoUrls[0].seoPathInfo);
-            detail_path = element.seoUrls[0].seoPathInfo;
-          } else {
-            commentData.urlPattern = process.env.HOST + ":" + process.env.PORT + "/detail/" + element.id;
-            array_detail_view.push("http://localhost:3000/detail/" + element.id);
-            detail_path = "detail/" + element.id;
-          }
-          if (val == 0) {
-            const resp = await contextInstance.invoke.post(getPageResolverEndpoint(), {
-              path: detail_path,
-              ...detail_params_default.useCms,
-            }, { timeout: 300000 });
-            console.log("Product Page Response:", resp.data);
-            let detail_page = resp.data;
-            //console.log("Offline Elemeent end:", element);
-            const result = await db.put('products', {
-              id: element.id,
-              path: path.split(","),
-              name: element.translated?.name,
-              detail_path: detail_path,
-              detail_page: detail_page,
-              price: element.calculatedPrices[0]?.unitPrice,
-              productCode: element.translated?.customFields?.migration_BerndWolf_product_attr13,
-              element: element
-            });
-            //console.log('Put Data: ', JSON.stringify(result));
-            count += 1;
-          } else {
-            let new_path = val.path;
-            new_path.push(path);
-            const result = await db.put('products', {
-              id: element.id,
-              path: new_path,
-              detail_path: detail_path,
-              detail_page: val.detail_page,
-              name: element.translated?.name,
-              price: element.calculatedPrices[0]?.unitPrice,
-              productCode: element.translated?.customFields?.migration_BerndWolf_product_attr13,
-              element: element
-            });
-          }
-          // array_detail_view.push(commentData);
         }
       }
     }
@@ -235,22 +287,22 @@ export async function saveProducts(
   response: NavigationResponse,
   contextInstance: ShopwareApiInstance = defaultInstance
 ): Promise<void> {
-
   console.log("Inside Save Products", response);
-  const db = await openDB<MyDB>('my-db-1', 1, {
+  const db = await openDB<MyDB>("my-db-1", 1, {
     upgrade(db) {
-      db.createObjectStore('favourite-number');
+      db.createObjectStore("favourite-number");
 
-      const productStore = db.createObjectStore('products', {
-        keyPath: 'id', autoIncrement: true
+      const productStore = db.createObjectStore("products", {
+        keyPath: "id",
+        autoIncrement: true,
       });
-      productStore.createIndex('by-price', 'price');
-      productStore.createIndex('by-path', 'path', { multiEntry: true });
-      productStore.createIndex('by-detail-path', 'detail_path');
+      productStore.createIndex("by-price", "price");
+      productStore.createIndex("by-path", "path", { multiEntry: true });
+      productStore.createIndex("by-detail-path", "detail_path");
     },
   });
   let params: ShopwareSearchParams = {
-    limit: 10
+    limit: 10,
   };
   console.log("Response Children:", response.children);
   let path_array = {} as Path;
@@ -265,21 +317,30 @@ export async function saveProducts(
   console.log("Unique Path Array:", unique);
   await db.put("favourite-number", unique, "unique-path-array");
 
-  unique = ["/"];
+  unique = ["Kollektionen/"];
   for (let path of unique) {
     console.log("PATH:", path);
 
-    const all_products = await contextInstance.invoke.post(getPageResolverEndpoint(), {
-      path: path.toString(),
-      ...params,
-    }, { timeout: 300000 });
+    const all_products = await contextInstance.invoke.post(
+      getPageResolverEndpoint(),
+      {
+        path: path.toString(),
+        ...params,
+      },
+      { timeout: 300000 }
+    );
 
-    const val = await db.get("favourite-number", 'page_response_place_holder') || 0;
+    const val =
+      (await db.get("favourite-number", "page_response_place_holder")) || 0;
     console.log("val", val);
     if (val == 0) {
       const response_place_holder = all_products.data;
       //response_place_holder.cmsPage.sections[0].blocks[2].slots[0].data.listing.elements = [];
-      await db.put("favourite-number", response_place_holder, "page_response_place_holder");
+      await db.put(
+        "favourite-number",
+        response_place_holder,
+        "page_response_place_holder"
+      );
     }
   }
   let detail_params_default = getDefaultApiParams();
@@ -287,7 +348,7 @@ export async function saveProducts(
   let db_bkp = detail_params_default.save_products.query;
   // let parsed_bkp = parse(db_bkp);
   // let json = JSON.stringify(parsed_bkp);
-  var importObject = parse(db_bkp);//JSON.parse(json)
+  var importObject = parse(db_bkp); //JSON.parse(json)
   console.log("importObject:", importObject);
   for (const toAdd of importObject["products"]) {
     console.log("importObject:", toAdd);
@@ -297,26 +358,20 @@ export async function saveProducts(
   }
 }
 export async function exportToJson(db) {
-
-  const exportObject = {}
+  const exportObject = {};
   if (db.objectStoreNames.length === 0) {
-    return JSON.stringify(exportObject)
+    return JSON.stringify(exportObject);
   } else {
-
     for (const storeName of db.objectStoreNames) {
-      const allObjects = []
-      const product_exist = await db.getAll("products") || false;
+      const allObjects = [];
+      const product_exist = (await db.getAll("products")) || false;
       console.log("product_exist", product_exist);
       if (product_exist) {
         allObjects.push(product_exist);
       }
       exportObject["products"] = allObjects;
       // Last store was handled
-      if (
-        db.objectStoreNames.length ===
-        Object.keys(exportObject).length
-      ) {
-
+      if (db.objectStoreNames.length === Object.keys(exportObject).length) {
       }
     }
     console.log("LIMIT REACHED:", exportObject);
@@ -326,23 +381,22 @@ export async function exportToJson(db) {
     // console.log("STRINGIFIED PARSED:", stringified_parse);
     return stringified;
   }
-
 }
 export async function getNavigation(
   params: GetNavigationParams,
   contextInstance: ShopwareApiInstance = defaultInstance
 ): Promise<NavigationResponse> {
-
-  const db = await openDB<MyDB>('my-db-1', 1, {
+  const db = await openDB<MyDB>("my-db-1", 1, {
     upgrade(db) {
-      db.createObjectStore('favourite-number');
+      db.createObjectStore("favourite-number");
 
-      const productStore = db.createObjectStore('products', {
-        keyPath: 'id', autoIncrement: true
+      const productStore = db.createObjectStore("products", {
+        keyPath: "id",
+        autoIncrement: true,
       });
-      productStore.createIndex('by-price', 'price');
-      productStore.createIndex('by-path', 'path', { multiEntry: true });
-      productStore.createIndex('by-detail-path', 'detail_path');
+      productStore.createIndex("by-price", "price");
+      productStore.createIndex("by-path", "path", { multiEntry: true });
+      productStore.createIndex("by-detail-path", "detail_path");
     },
   });
   console.log("--NAVIGATION--");
@@ -386,13 +440,12 @@ export async function getNavigation(
   await indexDb.putValue("books", { name: "A Game of Thrones" });
 
   // This works
-  await db.put('favourite-number', 7, 'Jen');
-  const val = await db.get("favourite-number", 'top-navigation') || 0;
+  await db.put("favourite-number", 7, "Jen");
+  const val = (await db.get("favourite-number", "top-navigation")) || 0;
   console.log("val", val);
   let response;
   response = val;
   if (val == 0) {
-
     const resp = await contextInstance.invoke.post(
       getNavigationEndpoint(),
       params,
@@ -402,7 +455,7 @@ export async function getNavigation(
     await db.put("favourite-number", resp.data, "top-navigation");
     // await db.put("favourite-number", "topnav", resp.data);
     // await indexedDb.putValue("navigation", resp.data);
-    await db.put("favourite-number", 'nav', "test_data");
+    await db.put("favourite-number", "nav", "test_data");
     // await db.put("favourite-number", 3, "test_data");
     await db.put("favourite-number", 5, "{test_data}");
 
@@ -415,15 +468,17 @@ export async function getNavigation(
     // await db.put("favourite-number", 'topnav', resp.data);
     response = resp.data;
   }
-  
+
   if (process.browser) {
     console.log("BROWSER - NAVIGATION");
-    const product_exist = await db.getAll("products") || false;
+    const product_exist = (await db.getAll("products")) || false;
     console.log("product_exist", product_exist);
     console.log("product_exist - length : ", product_exist.length);
     if (product_exist.length > 1300) {
-
-      const response_template = await db.get("favourite-number", "page_response_place_holder");
+      const response_template = await db.get(
+        "favourite-number",
+        "page_response_place_holder"
+      );
       console.log("response_template", response_template);
 
       console.log("Response Children:", response.children);
@@ -500,7 +555,6 @@ export async function getNavigation(
         await db.put("favourite-number", response_place_holder, "page_response_place_holder");
       } */
     }
-
   }
   /*  await db.put('products', { name: "test",
    price: 10,
@@ -508,7 +562,7 @@ export async function getNavigation(
    key: "1"}); */
   return response;
   // This fails at compile time, as the 'favourite-number' store expects a number.
-  await db.put('favourite-number', 'Twelve', 'Jake');
+  await db.put("favourite-number", "Twelve", "Jake");
 
   /*  const tableName = "navigation";
    let dbPromise: Promise<idxdb.DB> = openDB('test-db5', 1, (upgradeDb: idxdb.UpgradeDB) => {
@@ -596,7 +650,85 @@ export async function getStoreNavigation(
   }: GetStoreNavigationParams,
   contextInstance: ShopwareApiInstance = defaultInstance
 ): Promise<StoreNavigationElement[]> {
-  const resp = await contextInstance.invoke.post(
+  console.log("--GET STORE NAVIGATION--");
+  const db = await openDB<MyDB>("my-db-1", 1, {
+    upgrade(db) {
+      db.createObjectStore("favourite-number");
+      const productStore = db.createObjectStore("products", {
+        keyPath: "id",
+        autoIncrement: true,
+      });
+      productStore.createIndex("by-price", "price");
+      productStore.createIndex("by-path", "path", { multiEntry: true });
+      productStore.createIndex("by-detail-path", "detail_path");
+    },
+  });
+  let db_bkp = await exportToJson(db);
+  console.log("DB BKP:", db_bkp);
+
+  let db_bkp_string = JSON.stringify(db_bkp);
+  console.log("DB BKP STRING:", db_bkp_string);
+
+  const val = (await db.get("favourite-number", "top-navigation")) || 0;
+  console.log("val", val);
+  let response;
+  response = val;
+  if (val == 0) {
+    const resp = await contextInstance.invoke.post(
+      getStoreNavigationEndpoint(requestActiveId, requestRootId),
+      {
+        ...convertSearchCriteria({
+          searchCriteria,
+          apiType: ApiType.store,
+          config: contextInstance.config,
+        }),
+        ...{
+          depth,
+          buildTree,
+        },
+      },
+      { timeout: 300000 }
+    );
+    console.log("Response from API:", resp.data);
+    await db.put("favourite-number", resp.data, "top-navigation");
+    response = resp.data;
+  }
+
+  if (process.browser) {
+    console.log("BROWSER - NAVIGATION");
+    const product_exist = (await db.getAll("products")) || false;
+    console.log("product_exist", product_exist);
+    console.log("product_exist - length : ", product_exist.length);
+    if (product_exist.length > 300) {
+      const response_template = await db.get(
+        "favourite-number",
+        "page_response_place_holder"
+      );
+      console.log("response_template", response_template);
+
+      console.log("Response Children:", response.children);
+      let path_array = {} as Path;
+      path_array.path = [];
+      get_path(response, path_array);
+      console.log("Path Array:", path_array);
+
+      var unique = path_array.path.filter(function (elem, index, self) {
+        return index === self.indexOf(elem);
+      });
+
+      console.log("Unique Path Array:", unique);
+      await db.put("favourite-number", unique, "unique-path-array");
+    } else {
+      //For saving the products from Json
+      saveProducts(response, contextInstance);
+
+      //For fetching products from server
+      //saveProducts_OLD(response, contextInstance);
+    }
+  }
+
+  return response;
+  /* const resp = await contextInstance.invoke.post(
     getStoreNavigationEndpoint(requestActiveId, requestRootId),
     {
       ...convertSearchCriteria({
@@ -611,5 +743,5 @@ export async function getStoreNavigation(
     }
   );
 
-  return resp.data;
+  return resp.data; */
 }

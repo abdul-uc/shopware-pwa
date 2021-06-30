@@ -11,11 +11,10 @@ import {
 } from "@shopware-pwa/commons/interfaces/models/content/cms/CmsPage";
 
 import { convertSearchCriteria } from "../helpers/searchConverter";
-
+import { getDefaultApiParams } from "@shopware-pwa/composables";
 import * as idxdb from "idb";
 import { IDBPDatabase, openDB } from "idb";
 import { indexDB } from "../indexDB";
-
 
 /**
  * @throws ClientApiError
@@ -54,7 +53,7 @@ export async function getCmsPage(
   console.log("Path:", path);
 
   let params: ShopwareSearchParams = {
-    limit: 500
+    limit: 500,
   };
 
   console.log("Params:", params);
@@ -64,21 +63,23 @@ export async function getCmsPage(
     console.log("BROWSER");
     if (self.$nuxt.isOffline) {
       console.log("OFFLINE");
-      const db = await openDB<MyDB>('my-db-1', 1, {
+      const db = await openDB<MyDB>("my-db-1", 1, {
         upgrade(db) {
-          db.createObjectStore('favourite-number');
+          db.createObjectStore("favourite-number");
 
-          const productStore = db.createObjectStore('products', {
-            keyPath: 'id', autoIncrement: true
+          const productStore = db.createObjectStore("products", {
+            keyPath: "id",
+            autoIncrement: true,
           });
-          productStore.createIndex('by-price', 'price');
-          productStore.createIndex('by-path', 'path', { multiEntry: true });
-          productStore.createIndex('by-detail-path', 'detail_path');
+          productStore.createIndex("by-price", "price");
+          productStore.createIndex("by-path", "path", { multiEntry: true });
+          productStore.createIndex("by-detail-path", "detail_path");
         },
       });
       if (!path) path = "/";
       let response;
-      const unique_path_array = await db.get("favourite-number", 'unique-path-array') || 0;
+      const unique_path_array =
+        (await db.get("favourite-number", "unique-path-array")) || 0;
       if (unique_path_array != 0) {
         if (unique_path_array.includes(path)) {
           let transaction = db.transaction("products"); // readonly
@@ -98,7 +99,7 @@ export async function getCmsPage(
           var test_1 = index.getAll(path);
 
           test_1.then((value) => {
-            console.log('match call');
+            console.log("match call");
             var match = value;
             if (match) {
               console.log("Match");
@@ -109,7 +110,10 @@ export async function getCmsPage(
 
           let product_request = pathIndex.getAll(path);
           console.log("product_request: ", product_request);
-          const response_template = await db.get("favourite-number", "page_response_place_holder");
+          const response_template = await db.get(
+            "favourite-number",
+            "page_response_place_holder"
+          );
 
           response = product_request.then((value) => {
             console.log(value);
@@ -126,7 +130,8 @@ export async function getCmsPage(
                 let array_elements_media = [];
                 for (let product of product_exist) {
                   array_elements.push(product.element);
-                  for (let thumbnail of product.element.cover.media.thumbnails) {
+                  for (let thumbnail of product.element.cover.media
+                    .thumbnails) {
                     if (thumbnail.width == 200)
                       array_elements_media.push(thumbnail.url);
                   }
@@ -139,14 +144,15 @@ export async function getCmsPage(
             }
           });
         } else {
-          const db_1 = await openDB<MyDB>('my-db-1', 1, {
+          const db_1 = await openDB<MyDB>("my-db-1", 1, {
             upgrade(db) {
-              db.createObjectStore('favourite-number');
+              db.createObjectStore("favourite-number");
 
-              const productStore = db.createObjectStore('products', {
-                keyPath: 'id', autoIncrement: true
+              const productStore = db.createObjectStore("products", {
+                keyPath: "id",
+                autoIncrement: true,
               });
-              productStore.createIndex('by-price', 'price');
+              productStore.createIndex("by-price", "price");
             },
           });
           let transaction = db_1.transaction("products"); // readonly
@@ -160,16 +166,19 @@ export async function getCmsPage(
           console.log("STATUS:", self.$nuxt.isOffline);
           if (self.$nuxt.isOffline != true) {
             console.log("--INSIDE NOT RESPONSE--NOT OFFLINE-- BEGIN", response);
-            const resp = await contextInstance.invoke.post(getPageResolverEndpoint(), {
-              path: path,
-              ...criteria,
-            });
+            const resp = await contextInstance.invoke.post(
+              getPageResolverEndpoint(),
+              {
+                path: path,
+                ...criteria,
+              }
+            );
             response = resp.data;
             console.log("--INSIDE NOT RESPONSE--NOT OFFLINE-- END", response);
           }
 
           response = test.then((value) => {
-            console.log('match call');
+            console.log("match call");
             var match = value;
             if (match) {
               console.log("DETAIL PAGE:", value.detail_page);
@@ -183,26 +192,36 @@ export async function getCmsPage(
 
       if (!response) {
         console.log("--INSIDE NOT RESPONSE--BEGIN--");
-        const resp = await contextInstance.invoke.post(getPageResolverEndpoint(), {
-          path: path,
-          ...criteria,
-        }, { timeout: 300000 });
+        const resp = await contextInstance.invoke.post(
+          getPageResolverEndpoint(),
+          {
+            path: path,
+            ...criteria,
+          },
+          { timeout: 300000 }
+        );
         console.log("--INSIDE NOT RESPONSE--");
         response = resp.data;
       }
       console.log("--RESPONSE--", response);
       return response;
-
     }
   } else {
     console.log("ONLINE");
     //console.log("CMS Page Response CLIENT:", resp.data.cmsPage.sections);
   }
-  const resp = await contextInstance.invoke.post(getPageResolverEndpoint(), {
-    path: path,
-    "no-aggregations": 1,
-    ...criteria,
-  }, { timeout: 300000 });
+  let detail_params_default = getDefaultApiParams();
+  console.log("DETAIL PARAMS DEFAULT: ", detail_params_default);
+  const resp = await contextInstance.invoke.post(
+    getPageResolverEndpoint(),
+    {
+      path: path,
+      // "no-aggregations": 1,
+      ...criteria,
+      // ...detail_params_default.useCms,
+    },
+    { timeout: 300000 }
+  );
   console.log("SERVER");
   return resp.data;
   /* if (process.browser) {
@@ -316,9 +335,6 @@ export async function getCmsPage(
       productStore.createIndex('by-price', 'price');
     },
   }); */
-
-
-
 }
 
 /**
@@ -330,17 +346,17 @@ export async function getProductPage(
   searchCriteria?: SearchCriteria,
   contextInstance: ShopwareApiInstance = defaultInstance
 ): Promise<PageResolverProductResult> {
-
   if (process.browser) {
     console.log("BROWSER");
-    const db = await openDB<MyDB>('my-db-1', 1, {
+    const db = await openDB<MyDB>("my-db-1", 1, {
       upgrade(db) {
-        db.createObjectStore('favourite-number');
+        db.createObjectStore("favourite-number");
 
-        const productStore = db.createObjectStore('products', {
-          keyPath: 'id', autoIncrement: true
+        const productStore = db.createObjectStore("products", {
+          keyPath: "id",
+          autoIncrement: true,
         });
-        productStore.createIndex('by-price', 'price');
+        productStore.createIndex("by-price", "price");
       },
     });
     let transaction = db.transaction("products"); // readonly
@@ -360,10 +376,10 @@ export async function getProductPage(
 
     if (!path) path = "/";
     console.log("Path:", path);
-    var test = index.getAll(path.split(','));
+    var test = index.getAll(path.split(","));
     console.log("test", test);
     test.then((value) => {
-      console.log('match call');
+      console.log("match call");
       var match = value;
       if (match) {
         console.log("Match");
