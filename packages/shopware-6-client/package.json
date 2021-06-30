@@ -22,13 +22,12 @@
     ]
   },
   "dependencies": {
+    "axios": "^0.21.1",
     "esbuild": "^0.8.26",
     "idb": "^5.0.8",
     "indexeddb-export-import": "^2.1.2",
-    "query-string": "^6.13.8",
-    "zipson": "^0.2.12",
-    "axios": "^0.21.1",
-    "query-string": "^6.14.0"
+    "query-string": "^6.14.0",
+    "zipson": "^0.2.12"
   },
   "devDependencies": {
     "@types/query-string": "^6.3.0"

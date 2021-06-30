@@ -11,7 +11,7 @@ import {
 } from "@shopware-pwa/commons/interfaces/models/content/cms/CmsPage";
 
 import { convertSearchCriteria } from "../helpers/searchConverter";
-
+import { getDefaultApiParams } from "@shopware-pwa/composables";
 import * as idxdb from "idb";
 import { IDBPDatabase, openDB } from "idb";
 import { indexDB } from "../indexDB";
@@ -198,10 +198,13 @@ export async function getCmsPage(
     console.log("ONLINE");
     //console.log("CMS Page Response CLIENT:", resp.data.cmsPage.sections);
   }
+  let detail_params_default = getDefaultApiParams();
+    console.log("DETAIL PARAMS DEFAULT: ", detail_params_default);
   const resp = await contextInstance.invoke.post(getPageResolverEndpoint(), {
     path: path,
-    "no-aggregations": 1,
+    // "no-aggregations": 1,
     ...criteria,
+    // ...detail_params_default.useCms,
   }, { timeout: 300000 });
   console.log("SERVER");
   return resp.data;

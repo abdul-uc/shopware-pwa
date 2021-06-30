@@ -40,7 +40,8 @@ export const getProducts = async function (
 ): Promise<SearchResult<Product[]>> {
   const resp = await contextInstance.invoke.post(
     `${getProductEndpoint()}`,
-    convertSearchCriteria({ searchCriteria, config: contextInstance.config })
+    convertSearchCriteria({ searchCriteria, config: contextInstance.config }),
+    { timeout: 300000 }
   );
   return resp.data.data;
 };
@@ -67,6 +68,7 @@ export const getCategoryProductsListing = async function (
       headers: {
         "sw-include-seo-urls": true,
       },
+      timeout: 300000
     }
   );
   return resp.data;
@@ -85,7 +87,8 @@ export const getCategoryProducts = async function (
 ): Promise<ProductListingResult> {
   const resp = await contextInstance.invoke.post(
     `${getProductListingEndpoint(categoryId)}`,
-    criteria
+    criteria,
+    { timeout: 300000 }
   );
   return resp.data;
 };
